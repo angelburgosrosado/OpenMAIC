@@ -26,12 +26,16 @@ import { ProSwapWatcher } from '@/components/workbench/ProSwapWatcher';
 //
 // `--font-sans` moves to globals.css since the family no longer comes from
 // next/font's generated class.
+import '@/lib/utils/dom-patch';
 import '@fontsource-variable/inter';
 
 export const metadata: Metadata = {
   title: 'OpenMAIC',
   description:
     'The open-source AI interactive classroom. Upload a PDF to instantly generate an immersive, multi-agent learning experience.',
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export default function RootLayout({
@@ -40,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="notranslate" translate="no">
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
         suppressHydrationWarning

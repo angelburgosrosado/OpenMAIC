@@ -45,6 +45,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep html lang attribute in sync with the active locale to prevent
+  // browser auto-translation prompts/conflicts
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
   const setLocale = (newLocale: Locale) => {
     i18n.changeLanguage(newLocale);
     try {

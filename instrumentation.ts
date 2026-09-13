@@ -105,6 +105,6 @@ export async function register(): Promise<void> {
     return shutdownPromise;
   };
 
-  process.once('SIGTERM', () => void shutdown());
-  process.once('SIGINT', () => void shutdown());
+  (process as NodeJS.Process)['once']?.('SIGTERM', () => void shutdown());
+  (process as NodeJS.Process)['once']?.('SIGINT', () => void shutdown());
 }
