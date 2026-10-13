@@ -36,6 +36,7 @@ import { InputGroup, InputGroupInput, InputGroupButton } from '@/components/ui/i
 import { Textarea as UITextarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { SettingsDialog } from '@/components/settings';
+import { UserNav } from '@/components/auth/user-nav';
 import { GenerationToolbar } from '@/components/generation/generation-toolbar';
 import { AgentBar } from '@/components/agent/agent-bar';
 import { useTheme } from '@/lib/hooks/use-theme';
@@ -95,6 +96,7 @@ import {
   readLastWorkspaceSessionId,
   workspaceResumeHref,
 } from '@/lib/workbench/workspace-session-memory';
+import { InfographicModal } from '@/components/infographic';
 
 const log = createLogger('Home');
 
@@ -165,6 +167,7 @@ function HomePage() {
   }, [router, workbenchEntryEnabled]);
   const [form, setForm] = useState<FormState>(initialFormState);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [infographicStudioOpen, setInfographicStudioOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<
     import('@/lib/types/settings').SettingsSection | undefined
   >(undefined);
@@ -801,6 +804,11 @@ function HomePage() {
             <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
           </button>
         </div>
+
+        <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700" />
+
+        {/* User Account, Tokens & Auth Nav */}
+        <UserNav />
       </div>
       <SettingsDialog
         open={settingsOpen}
@@ -924,6 +932,24 @@ function HomePage() {
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
                   {t('toolbar.interactiveModeHint')}
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Visual Knowledge Studio button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setInfographicStudioOpen(true)}
+                    className="shrink-0 h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold border border-cyan-500/30 hover:border-cyan-500/60 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 transition-all cursor-pointer shadow-xs"
+                    title="Visual Knowledge Studio"
+                  >
+                    <Atom className="size-3.5 text-cyan-500 animate-[spin_10s_linear_infinite]" />
+                    <span className="hidden sm:inline">Visual Studio</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Visual Knowledge Studio — Research & generate grounded 16:9 infographics
                 </TooltipContent>
               </Tooltip>
 
@@ -1342,6 +1368,16 @@ function HomePage() {
         }}
         folders={folders}
         onCreate={handleCreateFolder}
+      />
+
+      {/* Grounded Visual Knowledge Studio Modal */}
+      <InfographicModal
+        open={infographicStudioOpen}
+        onClose={() => setInfographicStudioOpen(false)}
+        initialTopic={form.requirement}
+        onInsertIntoSlide={(_dataUrl, prompt) => {
+          toast.success(`Infographic for "${prompt}" generated and ready for your course!`);
+        }}
       />
 
       {/* Footer — flows with content, at the very end */}

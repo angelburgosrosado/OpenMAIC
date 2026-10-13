@@ -62,8 +62,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Whitelist: access-code endpoints, health check
-  if (pathname.startsWith('/api/access-code/') || pathname === '/api/health') {
+  // Whitelist: access-code endpoints, health check, public auth and calculator/pricing endpoints
+  if (
+    pathname.startsWith('/api/access-code/') ||
+    pathname === '/api/health' ||
+    pathname.startsWith('/api/auth/') ||
+    pathname === '/api/monetization/plans' ||
+    pathname.startsWith('/api/calculator/')
+  ) {
     return NextResponse.next();
   }
 

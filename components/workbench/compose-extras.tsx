@@ -6,7 +6,7 @@
  * the homepage/workspace launch face and the ongoing conversation composer.
  */
 import { useEffect, useId, useRef, useState } from 'react';
-import { AtSign, Loader2, Paperclip, Sparkles } from 'lucide-react';
+import { AtSign, Loader2, Microscope, Paperclip, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/hooks/use-i18n';
 import { cn } from '@/lib/utils/cn';
@@ -530,6 +530,38 @@ export function SkillButton({
           className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
         >
           <Sparkles className="size-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function VisualKnowledgeStudioButton({
+  onClick,
+  disabled,
+  label = 'Visual Knowledge Studio',
+  testId = 'workbench-infographic-button',
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label?: string;
+  testId?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-testid={testId}
+          disabled={disabled}
+          aria-label={label}
+          onClick={onClick}
+          className="inline-flex size-8 items-center justify-center rounded-lg text-cyan-600 dark:text-cyan-400 transition-colors hover:bg-cyan-50 dark:hover:bg-cyan-950/40 hover:text-cyan-500 disabled:opacity-40"
+        >
+          <Microscope className="size-4" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">

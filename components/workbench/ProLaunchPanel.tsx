@@ -42,9 +42,11 @@ import {
   MaterialChips,
   SkillButton,
   SkillSlashMenu,
+  VisualKnowledgeStudioButton,
   useComposerMaterials,
   type AgentSkillInfo,
 } from '@/components/workbench/compose-extras';
+import { InfographicModal } from '@/components/infographic';
 import { insertSkillHandle, seedSlashQuery } from '@/lib/workbench/composer-skills';
 import { resolveComposerMenu } from '@/lib/workbench/composer-menus';
 import { useSkillHandleBackspace } from '@/components/workbench/use-skill-handle-backspace';
@@ -94,6 +96,7 @@ export function ProLaunchPanel({
 }) {
   const { t } = useI18n();
   const [prompt, setPrompt] = useState('');
+  const [infographicOpen, setInfographicOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   /** Invalidates a slow create when this panel is reset or leaves the tree. */
   const requestGeneration = useRef(0);
@@ -472,10 +475,25 @@ export function ProLaunchPanel({
             label={t('proMode.loadSkill')}
             onClick={openSkillMenu}
           />
+          <VisualKnowledgeStudioButton
+            disabled={submitting}
+            onClick={() => setInfographicOpen(true)}
+          />
           <div className="flex-1" />
           <ProLaunchSend canSend={canSend} onSubmit={submit} />
         </div>
       </div>
+
+      <InfographicModal
+        open={infographicOpen}
+        onClose={() => setInfographicOpen(false)}
+        initialTopic={prompt}
+        onInsertIntoSlide={(src, topic) => {
+          setPrompt((prev) => (prev ? `${prev}\n\n![${topic}](${src})` : `![${topic}](${src})`));
+          setInfographicOpen(false);
+          toast.success('Infographic reference added to prompt!');
+        }}
+      />
     </div>
   );
 }

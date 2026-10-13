@@ -28,6 +28,7 @@ import { CircularProgress } from '@/components/ui/circular-progress';
 import { VideoExportDialog } from './video-export-dialog';
 import { LanguageSwitcher } from '../language-switcher';
 import { SettingsDialog } from '../settings';
+import { UserNav } from '@/components/auth/user-nav';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -208,6 +209,11 @@ export function HeaderControls({
         >
           <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
         </button>
+
+        <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+
+        {/* User Account & Token Nav */}
+        <UserNav />
       </div>
 
       {/* Pro Switch — toggle property: on/off both clickable, not a

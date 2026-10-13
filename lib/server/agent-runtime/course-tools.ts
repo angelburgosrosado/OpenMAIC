@@ -46,6 +46,10 @@ import {
   type GenerateImageToolDeps,
 } from './generate-image';
 import {
+  buildGenerateInfographicTool,
+  GENERATE_INFOGRAPHIC_TOOL_NAME,
+} from './generate-infographic';
+import {
   buildGenerateVideoTool,
   GENERATE_VIDEO_TOOL_NAME,
   hasConfiguredVideoGeneration,
@@ -211,6 +215,7 @@ export function buildDslCourseToolset(
     ...buildGenerationTools(deps),
     buildImportPptxTool(deps),
     buildGenerateImageTool(deps),
+    buildGenerateInfographicTool(deps),
     ...(hasConfiguredVideoGeneration(deps) ? [buildGenerateVideoTool(deps)] : []),
     ...buildCourseAudioAndDeckTools(deps),
     ...(deps.sessionId ? [buildMaterialMediaTool({ sessionId: deps.sessionId })] : []),
@@ -228,6 +233,7 @@ export function buildCourseAllowlist(
     ...GENERATION_TOOL_NAMES,
     IMPORT_PPTX_TOOL_NAME,
     GENERATE_IMAGE_TOOL_NAME,
+    GENERATE_INFOGRAPHIC_TOOL_NAME,
     ...(hasConfiguredVideoGeneration(videoDeps) ? [GENERATE_VIDEO_TOOL_NAME] : []),
     ...COURSE_AUDIO_DECK_TOOL_NAMES,
     MATERIAL_MEDIA_TOOL_NAME,

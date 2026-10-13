@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Microscope } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/hooks/use-i18n';
+import { InfographicModal } from '@/components/infographic';
 
 interface ImagePickerProps {
   readonly onPick: (src: string) => void;
@@ -22,6 +24,7 @@ export function ImagePicker({ onPick }: ImagePickerProps) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState('');
+  const [infographicOpen, setInfographicOpen] = useState(false);
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
@@ -35,6 +38,25 @@ export function ImagePicker({ onPick }: ImagePickerProps) {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Grounded Infographic AI Visual Studio Entry */}
+      <button
+        type="button"
+        onClick={() => setInfographicOpen(true)}
+        className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600/15 to-purple-600/15 hover:from-cyan-600/25 hover:to-purple-600/25 border border-cyan-500/40 text-cyan-700 dark:text-cyan-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
+      >
+        <Microscope className="w-4 h-4 text-cyan-500 animate-pulse" />
+        <span>Generate Grounded Infographic</span>
+      </button>
+
+      <InfographicModal
+        open={infographicOpen}
+        onClose={() => setInfographicOpen(false)}
+        onInsertIntoSlide={(src) => {
+          onPick(src);
+          setInfographicOpen(false);
+        }}
+      />
+
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

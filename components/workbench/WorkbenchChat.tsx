@@ -77,9 +77,11 @@ import {
   MaterialChips,
   SkillButton,
   SkillSlashMenu,
+  VisualKnowledgeStudioButton,
   useComposerMaterials,
   type AgentSkillInfo,
 } from './compose-extras';
+import { InfographicModal } from '@/components/infographic';
 import { insertSkillHandle, seedSlashQuery } from '@/lib/workbench/composer-skills';
 import { useSkillHandleBackspace } from './use-skill-handle-backspace';
 import { resolveComposerMenu } from '@/lib/workbench/composer-menus';
@@ -177,6 +179,7 @@ export function WorkbenchChat({
   const displayedPlan = retainedTranscript?.plan ?? plan;
 
   const [draft, setDraft] = useState('');
+  const [infographicOpen, setInfographicOpen] = useState(false);
   /**
    * Where the caret is in the box.
    *
@@ -1001,6 +1004,10 @@ export function WorkbenchChat({
                     label={t('proMode.loadSkill')}
                     onClick={openSkillMenu}
                   />
+                  <VisualKnowledgeStudioButton
+                    disabled={busy || !canSend}
+                    onClick={() => setInfographicOpen(true)}
+                  />
                 </div>
                 <div className={styles.composer.actionsRow}>
                   {live ? (
@@ -1063,6 +1070,17 @@ export function WorkbenchChat({
           </div>
         </footer>
       </div>
+
+      <InfographicModal
+        open={infographicOpen}
+        onClose={() => setInfographicOpen(false)}
+        initialTopic={draft}
+        onInsertIntoSlide={(src, prompt) => {
+          setDraft((prev) => (prev ? `${prev}\n\n![${prompt}](${src})` : `![${prompt}](${src})`));
+          setInfographicOpen(false);
+          toast.success('Infographic reference inserted into message draft!');
+        }}
+      />
     </div>
   );
 }
