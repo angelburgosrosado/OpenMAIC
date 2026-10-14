@@ -1,6 +1,42 @@
-export type UserRole = 'admin' | 'user' | 'creator';
+export type AppRole =
+  | 'learner'
+  | 'parent'
+  | 'teacher'
+  | 'organization_admin'
+  | 'platform_admin';
+
+// UserRole includes AppRole and legacy roles for backwards compatibility
+export type UserRole = AppRole | 'admin' | 'user' | 'creator';
 export type UserTier = 'free' | 'pro' | 'enterprise';
 export type UserStatus = 'active' | 'suspended' | 'pending';
+
+export type TenantType = 'personal_family' | 'classroom' | 'organization';
+
+export interface Tenant {
+  id: string;
+  type: TenantType;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TenantMembership {
+  tenantId: string;
+  userId: string;
+  role: AppRole;
+  createdAt: string;
+  tenant?: Tenant;
+}
+
+export interface SessionPrincipal {
+  userId: string;
+  email?: string;
+  name?: string;
+  role: AppRole;
+  tenants: TenantMembership[];
+  activeTenant: TenantMembership;
+  isAnonymousDev?: boolean;
+}
 
 export interface User {
   id: string;
