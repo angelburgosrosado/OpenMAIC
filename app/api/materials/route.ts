@@ -41,6 +41,7 @@ import type { ConnectableQueryable } from '@openmaic/storage/server/reference';
 
 import { isAgentRuntimeConfigured } from '@/lib/config/feature-flags';
 import { apiError } from '@/lib/server/api-response';
+import { resolvePrincipal } from '@/lib/server/auth/authorization';
 import { agentRuntimeConfig } from '@/lib/server/agent-runtime/config';
 import { ownerJson, ownerNotFound } from '@/lib/server/agent-runtime/route-response';
 import { withRequestOwnerId } from '@/lib/server/agent-runtime/with-owner';
@@ -267,6 +268,12 @@ export async function POST(req: NextRequest) {
       });
 
       phase = 'reserve_material';
+      let principal = null;
+      try {
+        principal = await resolvePrincipal(req);
+      } catch {
+        // Continue if unauthenticated anonymous session
+      }
       try {
         await registerOwnerMaterial(
           provider.pool as unknown as ConnectableQueryable,
@@ -279,6 +286,8 @@ export async function POST(req: NextRequest) {
             originalName,
             ossKey,
             extraction: { status: 'idle' },
+            tenantId: principal?.activeTenant?.tenantId,
+            createdBy: principal?.userId,
           },
           {
             maxCount: agentRuntimeConfig.maxMaterialsPerOwner,

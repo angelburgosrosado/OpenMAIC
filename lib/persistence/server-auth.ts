@@ -18,6 +18,7 @@ import type { AssetPrincipal } from '@openmaic/storage';
 import type { RuntimeHttpPrincipal } from '@openmaic/storage/server';
 
 import { createLogger } from '@/lib/logger';
+import { parseSessionToken } from '@/lib/server/auth/session';
 
 const log = createLogger('PersistenceAuth');
 
@@ -80,19 +81,21 @@ function authenticatePersistenceCredentials(
   authorization: string | undefined,
   learnerKey: string | undefined,
 ): PersistencePrincipal | undefined {
+  if (authorization && authorization.startsWith('Bearer ')) {
+    const token = authorization.slice(7).trim();
+    // 1. Check for real server-signed session token
+    const verifiedUserId = parseSessionToken(token);
+    if (verifiedUserId) {
+      return { key: SHARED_ASSET_PRINCIPAL, learnerKey: verifiedUserId };
+    }
+  }
+
+  // 2. Fall back to development authenticator if permitted
   if (!devAuthenticatorAllowedInCurrentEnvironment()) return undefined;
 
   const token = process.env.PERSISTENCE_DEV_TOKEN;
   if (!token || !authorization || !secureEqual(authorization, `Bearer ${token}`)) return undefined;
 
-  // Documents are stored without any ownership partition, so assets are
-  // stored under one shared principal to match: this authenticator provides
-  // no user isolation either way (the header is client-supplied), and a
-  // per-header asset partition only meant a converted document's assets
-  // became unreadable to every other browser the document was shared with.
-  // The learner key still partitions runtime sessions, which are genuinely
-  // per-learner state. Production replaces this module with real session
-  // verification and derives both from server-controlled claims.
   return { key: SHARED_ASSET_PRINCIPAL, ...(learnerKey ? { learnerKey } : {}) };
 }
 

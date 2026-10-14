@@ -9,6 +9,7 @@ import { NextRequest } from 'next/server';
 import { callLLM } from '@/lib/ai/llm';
 import { createLogger } from '@/lib/logger';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
+import { resolvePrincipal } from '@/lib/server/auth/authorization';
 import { resolveModelFromRequest } from '@/lib/server/resolve-model';
 const log = createLogger('Quiz Grade');
 
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
   let questionSnippet: string | undefined;
   let resolvedPoints: number | undefined;
   try {
+    const principal = await resolvePrincipal(req);
+    if (!principal) {
+      return apiError('UNAUTHENTICATED', 401, 'Authentication required to evaluate answers');
+    }
+
     const body = (await req.json()) as GradeRequest;
     const { question, userAnswer, points, commentPrompt, language } = body;
     questionSnippet = question?.substring(0, 60);

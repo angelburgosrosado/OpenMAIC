@@ -86,8 +86,23 @@ export async function getCurrentUser(req?: NextRequest): Promise<User | null> {
 
   // 2. Check session cookie
   let cookieToken: string | undefined;
-  if (req) {
-    cookieToken = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (req && 'cookies' in req && typeof (req as { cookies?: { get?: (k: string) => { value?: string } } }).cookies?.get === 'function') {
+    cookieToken = (req as { cookies: { get: (k: string) => { value?: string } } }).cookies.get(SESSION_COOKIE_NAME)?.value;
+  } else if (req) {
+    const rawCookie = req.headers.get('cookie');
+    if (rawCookie) {
+      for (const item of rawCookie.split(';')) {
+        const sep = item.indexOf('=');
+        if (sep >= 0 && item.slice(0, sep).trim() === SESSION_COOKIE_NAME) {
+          try {
+            cookieToken = decodeURIComponent(item.slice(sep + 1).trim());
+          } catch {
+            // Ignore malformed cookie
+          }
+          break;
+        }
+      }
+    }
   } else {
     try {
       const cookieStore = await cookies();

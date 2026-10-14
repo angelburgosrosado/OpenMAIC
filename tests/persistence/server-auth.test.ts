@@ -49,6 +49,18 @@ describe('embedded persistence development authentication', () => {
       authenticatePersistenceRequest(request({ authorization: 'Bearer shared-secreu' })),
     ).resolves.toBeUndefined();
   });
+
+  it('authenticates valid server session tokens and derives learnerKey ignoring client spoofed headers', async () => {
+    const { createSessionToken } = await import('@/lib/server/auth/session');
+    const token = createSessionToken('verified-student-123');
+    const result = await authenticatePersistenceRequest(
+      request({
+        authorization: `Bearer ${token}`,
+        'x-learner-key': 'attacker-spoofed-key',
+      }),
+    );
+    expect(result).toEqual({ key: 'shared', learnerKey: 'verified-student-123' });
+  });
 });
 
 describe('embedded persistence development authentication — production gate', () => {
