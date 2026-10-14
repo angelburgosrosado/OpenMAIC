@@ -10,6 +10,10 @@ export interface StageMetaRow {
   /** Server-side mirror of the document outline's generation-complete flag. */
   generationComplete: boolean;
   deletedAt: Date | null;
+  tenantId?: string | null;
+  createdBy?: string | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 interface RawStageMetaRow extends Record<string, unknown> {
@@ -19,6 +23,10 @@ interface RawStageMetaRow extends Record<string, unknown> {
   published_at: number | string | null;
   generation_complete: boolean;
   deleted_at: Date | string | null;
+  tenant_id?: string | null;
+  created_by?: string | null;
+  created_at?: Date | string | null;
+  updated_at?: Date | string | null;
 }
 
 export const STAGE_META_SCHEMA = `
@@ -35,7 +43,21 @@ ALTER TABLE stage_meta
 ALTER TABLE stage_meta
   ADD COLUMN IF NOT EXISTS generation_complete BOOLEAN NOT NULL DEFAULT false;
 
+ALTER TABLE stage_meta
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE stage_meta
+  ADD COLUMN IF NOT EXISTS created_by TEXT;
+
+ALTER TABLE stage_meta
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE stage_meta
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+
 CREATE INDEX IF NOT EXISTS stage_meta_owner_idx ON stage_meta (owner_id, stage_id);
+
+CREATE INDEX IF NOT EXISTS stage_meta_tenant_idx ON stage_meta (tenant_id, stage_id);
 
 CREATE INDEX IF NOT EXISTS stage_meta_public_live_idx
   ON stage_meta (stage_id) WHERE is_public AND deleted_at IS NULL;
@@ -59,7 +81,8 @@ export async function readStageMeta(
   stageId: string,
 ): Promise<StageMetaRow | null> {
   const result = await queryable.query<RawStageMetaRow>(
-    `SELECT stage_id, owner_id, is_public, published_at, generation_complete, deleted_at
+    `SELECT stage_id, owner_id, is_public, published_at, generation_complete, deleted_at,
+            tenant_id, created_by, created_at, updated_at
        FROM stage_meta
       WHERE stage_id = $1`,
     [stageId],
@@ -84,6 +107,20 @@ export async function readStageMeta(
         : row.deleted_at instanceof Date
           ? row.deleted_at
           : new Date(row.deleted_at),
+    tenantId: row.tenant_id ? String(row.tenant_id) : null,
+    createdBy: row.created_by ? String(row.created_by) : null,
+    createdAt:
+      row.created_at === null || row.created_at === undefined
+        ? null
+        : row.created_at instanceof Date
+          ? row.created_at
+          : new Date(row.created_at),
+    updatedAt:
+      row.updated_at === null || row.updated_at === undefined
+        ? null
+        : row.updated_at instanceof Date
+          ? row.updated_at
+          : new Date(row.updated_at),
   };
 }
 
@@ -104,13 +141,14 @@ export async function claimStageMeta(
   queryable: Queryable,
   stageId: string,
   ownerId: string,
+  options?: { tenantId?: string; createdBy?: string },
 ): Promise<void> {
   const inserted = await queryable.query<{ owner_id: string } & Record<string, unknown>>(
-    `INSERT INTO stage_meta (stage_id, owner_id)
-     VALUES ($1, $2)
+    `INSERT INTO stage_meta (stage_id, owner_id, tenant_id, created_by)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (stage_id) DO NOTHING
      RETURNING owner_id`,
-    [stageId, ownerId],
+    [stageId, ownerId, options?.tenantId ?? null, options?.createdBy ?? ownerId],
   );
   if (inserted.rows[0]?.owner_id === ownerId) return;
 

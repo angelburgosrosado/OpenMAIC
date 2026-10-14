@@ -54,6 +54,9 @@ export interface OwnerMaterialRecord {
   extraction: OwnerMaterialExtraction | null;
   createdAt: number;
   deletedAt: number | null;
+  tenantId?: string | null;
+  createdBy?: string | null;
+  updatedAt?: number | null;
 }
 
 /** The flat view the uploader's client contract reads (the reference's `publicMaterial`). */
@@ -66,6 +69,7 @@ export interface OwnerMaterialView {
   originalName?: string;
   extraction?: OwnerMaterialExtraction;
   createdAt: string;
+  tenantId?: string;
 }
 
 export class MaterialQuotaExceededError extends Error {
@@ -97,6 +101,8 @@ export interface RegisterOwnerMaterialInput {
   originalName?: string;
   ossKey: string;
   extraction?: OwnerMaterialExtraction;
+  tenantId?: string;
+  createdBy?: string;
 }
 
 export const OWNER_MATERIAL_SCHEMA = `
@@ -127,6 +133,10 @@ CREATE INDEX IF NOT EXISTS owner_material_owner_created_idx
 -- go, or its constraint rejects every insert of the new row shape.
 ALTER TABLE owner_material ADD COLUMN IF NOT EXISTS oss_key TEXT NOT NULL DEFAULT '';
 ALTER TABLE owner_material DROP COLUMN IF EXISTS asset_id;
+ALTER TABLE owner_material ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+ALTER TABLE owner_material ADD COLUMN IF NOT EXISTS created_by TEXT;
+ALTER TABLE owner_material ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+CREATE INDEX IF NOT EXISTS owner_material_tenant_idx ON owner_material (tenant_id, id);
 `;
 
 export async function ensureOwnerMaterialSchema(queryable: Queryable): Promise<void> {
@@ -152,6 +162,9 @@ interface RawOwnerMaterialRow extends Record<string, unknown> {
   extraction: unknown;
   created_at: number | string;
   deleted_at: number | string | null;
+  tenant_id?: string | null;
+  created_by?: string | null;
+  updated_at?: Date | string | null;
 }
 
 const OWNER_MATERIAL_COLUMNS = `id,
@@ -166,7 +179,10 @@ const OWNER_MATERIAL_COLUMNS = `id,
   status,
   extraction,
   created_at,
-  deleted_at`;
+  deleted_at,
+  tenant_id,
+  created_by,
+  updated_at`;
 
 function rowToRecord(row: RawOwnerMaterialRow): OwnerMaterialRecord {
   return {
@@ -183,6 +199,14 @@ function rowToRecord(row: RawOwnerMaterialRow): OwnerMaterialRecord {
     extraction: extractionOf(row.extraction),
     createdAt: Number(row.created_at),
     deletedAt: row.deleted_at === null ? null : Number(row.deleted_at),
+    tenantId: row.tenant_id ? String(row.tenant_id) : null,
+    createdBy: row.created_by ? String(row.created_by) : null,
+    updatedAt:
+      row.updated_at === null || row.updated_at === undefined
+        ? null
+        : row.updated_at instanceof Date
+          ? row.updated_at.getTime()
+          : new Date(String(row.updated_at)).getTime(),
   };
 }
 
@@ -320,8 +344,8 @@ export async function registerOwnerMaterial(
     const inserted = await tx.query<RawOwnerMaterialRow>(
       `INSERT INTO owner_material
          (id, owner_id, kind, derived_from, mime, bytes, original_name,
-          oss_key, sha256, status, extraction, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, 'uploading', $9::jsonb, $10)
+          oss_key, sha256, status, extraction, created_at, tenant_id, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, 'uploading', $9::jsonb, $10, $11, $12)
        RETURNING ${OWNER_MATERIAL_COLUMNS}`,
       [
         input.id,
@@ -334,6 +358,8 @@ export async function registerOwnerMaterial(
         input.ossKey,
         input.extraction ? JSON.stringify(input.extraction) : null,
         Date.now(),
+        input.tenantId ?? null,
+        input.createdBy ?? input.ownerId,
       ],
     );
     return rowToRecord(inserted.rows[0]);

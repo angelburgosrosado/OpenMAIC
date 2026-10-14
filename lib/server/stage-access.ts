@@ -28,6 +28,8 @@ export interface StageAccess {
   generationComplete: boolean;
   source: 'document';
   deletedAt: Date | null;
+  tenantId?: string | null;
+  createdBy?: string | null;
 }
 
 interface RawAccessRow extends Record<string, unknown> {
@@ -36,6 +38,8 @@ interface RawAccessRow extends Record<string, unknown> {
   meta_published_at: string | number | null;
   meta_generation_complete: boolean | null;
   meta_deleted_at: Date | string | null;
+  meta_tenant_id?: string | null;
+  meta_created_by?: string | null;
   document_name: string | null;
 }
 
@@ -45,6 +49,8 @@ const ACCESS_SQL = `
          m.published_at        AS meta_published_at,
          m.generation_complete AS meta_generation_complete,
          m.deleted_at          AS meta_deleted_at,
+         m.tenant_id           AS meta_tenant_id,
+         m.created_by          AS meta_created_by,
          d.name                AS document_name
     FROM (SELECT $1::text AS stage_id) k
     LEFT JOIN stage_meta      m ON m.stage_id = k.stage_id
@@ -112,6 +118,8 @@ export async function readStageAccessIncludingDeleted(
     generationComplete: row.meta_generation_complete === true,
     source: 'document',
     deletedAt: toDate(row.meta_deleted_at),
+    tenantId: row.meta_tenant_id ? String(row.meta_tenant_id) : null,
+    createdBy: row.meta_created_by ? String(row.meta_created_by) : null,
   };
 }
 
