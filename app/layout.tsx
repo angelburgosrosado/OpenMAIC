@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
@@ -31,12 +31,32 @@ import '@/lib/utils/dom-patch';
 import '@fontsource-variable/inter';
 
 export const metadata: Metadata = {
-  title: 'OpenMAIC',
+  metadataBase: new URL('https://quewhat.com'),
+  title: {
+    default: 'QuéWhat — Learn it, play it, get it',
+    template: '%s · QuéWhat',
+  },
   description:
-    'The open-source AI interactive classroom. Upload a PDF to instantly generate an immersive, multi-agent learning experience.',
+    'An AI classroom for families in English and Spanish: homework help step by step, family quiz games, and interactive lessons on any topic.',
+  applicationName: 'QuéWhat',
+  openGraph: {
+    type: 'website',
+    siteName: 'QuéWhat',
+    url: 'https://quewhat.com',
+    title: 'QuéWhat — Learn it, play it, get it',
+    description:
+      'An AI classroom for families in English and Spanish. Aprende, juega y crea — juntos.',
+    locale: 'en_US',
+    alternateLocale: ['es_MX'],
+  },
+  twitter: { card: 'summary_large_image' },
   other: {
     google: 'notranslate',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#1F3B2D',
 };
 
 export default function RootLayout({

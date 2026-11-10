@@ -32,7 +32,7 @@ export default function PricingPage() {
       <header className="h-16 px-6 sm:px-12 border-b border-border/40 flex items-center justify-between backdrop-blur-md bg-background/80 sticky top-0 z-40">
         <Link href="/" className="flex items-center gap-2 text-sm font-bold text-foreground">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          <span>Back to OpenMAIC Studio</span>
+          <span>Back to QuéWhat</span>
         </Link>
         <div className="flex items-center gap-3">
           {user ? (
@@ -58,7 +58,7 @@ export default function PricingPage() {
         <div className="text-center space-y-4 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>OpenMAIC Monetization Program</span>
+            <span>QuéWhat Plans</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
             Simple, Token-Powered Pricing
