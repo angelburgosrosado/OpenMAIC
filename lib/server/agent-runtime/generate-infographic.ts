@@ -169,6 +169,7 @@ export function buildGenerateInfographicTool(
               ),
             },
           ],
+          details: {},
         };
       } catch (err: unknown) {
         log.error(`[${toolCallId}] Failed to generate grounded infographic: %o`, err);

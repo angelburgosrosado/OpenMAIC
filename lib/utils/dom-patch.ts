@@ -23,7 +23,7 @@ if (typeof window !== 'undefined' && typeof Node === 'function' && Node.prototyp
       }
       return child;
     }
-    return originalRemoveChild.call(this, child);
+    return originalRemoveChild.call(this, child) as T;
   };
 
   const originalInsertBefore = Node.prototype.insertBefore;
@@ -39,6 +39,6 @@ if (typeof window !== 'undefined' && typeof Node === 'function' && Node.prototyp
       }
       return newNode;
     }
-    return originalInsertBefore.call(this, newNode, referenceNode);
+    return originalInsertBefore.call(this, newNode, referenceNode) as T;
   };
 }

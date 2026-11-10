@@ -98,7 +98,8 @@ describe('generate_infographic agent runtime tool', () => {
     expect(mocks.writeFile).toHaveBeenCalled();
 
     expect(result.content[0].type).toBe('text');
-    const parsed = JSON.parse(result.content[0].text);
+    const first = result.content[0];
+    const parsed = JSON.parse(first.type === 'text' ? first.text : '{}');
     expect(parsed.success).toBe(true);
     expect(parsed.src).toContain('/api/classroom-media/stage-123/media/infographic-');
     expect(parsed.facts).toHaveLength(2);
