@@ -149,7 +149,7 @@ You MUST respond strictly with a valid JSON object in the following format, with
     parsed = JSON.parse(cleanJson);
   } catch (_err) {
     log.warn('Could not parse strict JSON from Gemini response, attempting regex recovery');
-    const factsMatch = responseText.match(/"facts"\s*:\s*\[(.*?)\]/s);
+    const factsMatch = responseText.match(/"facts"\s*:\s*\[([\s\S]*?)\]/);
     const promptMatch = responseText.match(/"imagePrompt"\s*:\s*"([^"]+)"/);
 
     const facts: string[] = [];
@@ -234,8 +234,8 @@ export async function generateInfographicImage(
   if (defaultProvider) {
     log.info('Falling back to OpenMAIC configured image provider: %s', defaultProvider);
     const result = await generateImage(
-      defaultProvider,
       {
+        providerId: defaultProvider,
         apiKey: resolveImageApiKey(defaultProvider, clientApiKey),
         baseUrl: resolveImageBaseUrl(defaultProvider),
         model: resolveImageModel(defaultProvider),

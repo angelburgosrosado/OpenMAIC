@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
     const settings = await getAppSettings();
-    return apiSuccess(settings);
+    return apiSuccess({ ...settings });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Access denied';
     return apiError('UNAUTHORIZED', 403, msg);

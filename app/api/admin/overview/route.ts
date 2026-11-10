@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
     const stats = await getAdminOverviewStats();
-    return apiSuccess(stats);
+    return apiSuccess({ ...stats });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Access denied';
     return apiError('UNAUTHORIZED', 403, msg);

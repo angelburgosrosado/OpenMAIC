@@ -412,6 +412,7 @@ describe('SceneRenderer TV mode integration', () => {
   const quizScene: Scene = {
     id: 'scene-quiz-int',
     stageId: 'stage-int',
+    title: 'Quiz',
     type: 'quiz',
     order: 0,
     content: {

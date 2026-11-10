@@ -157,7 +157,7 @@ export async function getAdminOverviewStats(): Promise<AdminOverviewStats> {
   const [userResult, revMetrics, usageRecords, recentLogs, settings] = await Promise.all([
     listUsers({ pageSize: 1000 }),
     getRevenueMetrics(),
-    readUsageRecords({ limit: 1000 }),
+    readUsageRecords().then((records) => records.slice(-1000)),
     listAuditLogs(10),
     getAppSettings(),
   ]);
