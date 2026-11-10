@@ -94,7 +94,7 @@ export function OnboardingModal() {
           </div>
 
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-            {step === 1 && 'Welcome to OpenMAIC! What is your main focus?'}
+            {step === 1 && 'Welcome to QuéWhat! What is your main focus?'}
             {step === 2 && 'Your Token Allowance is Ready'}
             {step === 3 && 'Personalize Your Presenter Identity'}
           </DialogTitle>
@@ -177,7 +177,7 @@ export function OnboardingModal() {
                 <span className="text-sm text-muted-foreground font-medium">tokens available</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Tokens power all AI generations across OpenMAIC — including outline planning, scene DSL
+                Tokens power all AI generations across QuéWhat — including outline planning, scene DSL
                 compilation, AI illustrations, and audio voiceover.
               </p>
             </div>

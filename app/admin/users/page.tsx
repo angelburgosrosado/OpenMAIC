@@ -206,7 +206,7 @@ export default function AdminUsersPage() {
             User Management & Accounts
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            View, search, edit roles, adjust token balances, and manage all {total} accounts on OpenMAIC.
+            View, search, edit roles, adjust token balances, and manage all {total} accounts on QuéWhat.
           </p>
         </div>
 

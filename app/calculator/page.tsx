@@ -111,7 +111,7 @@ export default function CalculatorPage() {
       <header className="h-16 px-6 sm:px-12 border-b border-border/40 flex items-center justify-between backdrop-blur-md bg-background/80 sticky top-0 z-40">
         <Link href="/" className="flex items-center gap-2 text-sm font-bold text-foreground">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          <span>Back to OpenMAIC Studio</span>
+          <span>Back to QuéWhat</span>
         </Link>
         <Button
           size="sm"

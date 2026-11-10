@@ -25,10 +25,10 @@ export interface BrandConfig {
 
 /** The default brand: the product itself, with no vendor overrides. */
 export const DEFAULT_BRAND: BrandConfig = {
-  productName: 'OpenMAIC',
-  shortName: 'OpenMAIC',
-  logoSrc: '/logo-horizontal.png',
+  productName: 'QuéWhat',
+  shortName: 'QuéWhat',
+  logoSrc: '/quewhat-logo.png',
   logoHasWordmark: true,
-  markSrc: '/openmaic-mark.png',
-  themeColor: '#722ed1',
+  markSrc: '/quewhat-mark.png',
+  themeColor: '#1F3B2D',
 };

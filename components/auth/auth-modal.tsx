@@ -81,7 +81,7 @@ export function AuthModal() {
     setLoading(false);
 
     if (result.success) {
-      toast.success('Account created successfully! Welcome to OpenMAIC.');
+      toast.success('Account created successfully! Welcome to QuéWhat.');
     } else {
       toast.error(result.error || 'Registration failed');
     }
@@ -102,7 +102,7 @@ export function AuthModal() {
           <div className="flex items-center justify-between mb-2">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>OpenMAIC Cloud Platform</span>
+              <span>QuéWhat</span>
             </div>
             <button
               type="button"

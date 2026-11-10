@@ -149,7 +149,7 @@ export function PricingModal() {
         <div className="p-6 pb-4 bg-gradient-to-br from-violet-600/10 via-purple-500/5 to-primary/10 border-b border-border/40 text-center shrink-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>OpenMAIC Monetization Program</span>
+            <span>QuéWhat Plans</span>
           </div>
           <DialogTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             Simple, Transparent Token-Powered Plans

@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <h1 className="text-xl font-bold text-foreground">Administrative Access Restricted</h1>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            You must be logged in as an administrator to access the OpenMAIC Administrative Backend.
+            You must be logged in as an administrator to access the QuéWhat admin area.
             Current user: <code className="text-foreground">{user?.email || 'Guest'}</code>
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
@@ -107,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div>
                 <div className="text-sm font-black tracking-tight text-foreground flex items-center gap-1.5">
-                  <span>OpenMAIC</span>
+                  <span>QuéWhat</span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-600 dark:text-violet-400">
                     ADMIN
                   </span>

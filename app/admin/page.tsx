@@ -67,7 +67,7 @@ export default function AdminOverviewPage() {
             Administrative Command Center
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Real-time telemetry, user account management, and monetization metrics for OpenMAIC.
+            Real-time telemetry, user account management, and monetization metrics for QuéWhat.
           </p>
         </div>
 
