@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowUp,
@@ -792,6 +793,18 @@ function HomePage() {
             </div>
           )}
         </div>
+
+        <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700" />
+
+        {/* Watch on TV / Sample Classroom */}
+        <Link
+          href="/classroom/sample?tv=1"
+          className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all hover:scale-105 shadow-sm"
+          title="Try Living Room TV & Mobile Mode"
+        >
+          <span className="text-sm">📺</span>
+          <span>Watch on TV</span>
+        </Link>
 
         <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700" />
 

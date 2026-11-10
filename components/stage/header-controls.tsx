@@ -13,7 +13,9 @@ import {
   Package,
   Settings,
   Sun,
+  Tv,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { useI18n } from '@/lib/hooks/use-i18n';
 import { useTheme } from '@/lib/hooks/use-theme';
@@ -208,6 +210,29 @@ export function HeaderControls({
           aria-label={t('settings.title')}
         >
           <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+        </button>
+
+        {/* Watch on TV Mode */}
+        <button
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.set('tv', '1');
+              const isMobileOrTablet = window.innerWidth < 1024;
+              if (isMobileOrTablet && navigator.clipboard) {
+                void navigator.clipboard.writeText(url.toString());
+                toast.success('TV Link Copied! Open on your Google TV / Fire TV browser.');
+              } else {
+                toast.success('Entering 10-Foot TV Mode. Use remote/arrow keys to navigate!');
+                window.location.href = url.toString();
+              }
+            }
+          }}
+          className="p-2 rounded-full text-gray-400 dark:text-gray-500 hover:bg-white dark:hover:bg-gray-700 hover:text-cyan-600 dark:hover:text-cyan-400 hover:shadow-sm transition-all"
+          title="Watch on TV / 10-Foot Mode"
+          aria-label="Watch on TV"
+        >
+          <Tv className="w-4 h-4" />
         </button>
 
         <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />

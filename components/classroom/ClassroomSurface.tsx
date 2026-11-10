@@ -63,10 +63,147 @@ import {
   useMayGenerateForStage,
 } from '@/lib/classroom/generation-permission';
 import { isServerBackedMediaPersistence } from '@/lib/persistence/media-persistence';
+import {
+  TVNavigationProvider,
+  useTVNavigation,
+} from '@/components/tv/TVNavigationProvider';
+import { TVPlaybackOSD } from '@/components/tv/TVPlaybackOSD';
+import { TVCompanionModal } from '@/components/tv/TVCompanionModal';
+import { TVFocusable } from '@/components/tv/TVFocusable';
+import { Flame, Smartphone, ArrowLeft } from 'lucide-react';
 
 const log = createLogger('Classroom');
 
 type ClassroomLoadOutcome = 'loaded' | 'unavailable' | 'failed' | 'cancelled';
+
+export function TVClassroomOverlay() {
+  const { isTVMode } = useTVNavigation();
+  const stage = useStageStore((s) => s.stage);
+  const scenes = useStageStore((s) => s.scenes);
+  const currentSceneId = useStageStore((s) => s.currentSceneId);
+  const setCurrentSceneId = useStageStore((s) => s.setCurrentSceneId);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
+  const [isCompanionOpen, setIsCompanionOpen] = useState(false);
+
+  if (!isTVMode) return null;
+
+  const rawIndex = scenes.findIndex((s) => s.id === currentSceneId);
+  const currentSceneIndex = rawIndex >= 0 ? rawIndex : 0;
+  const totalScenes = scenes.length;
+  const currentScene = scenes[currentSceneIndex];
+
+  const handlePrev = () => {
+    if (currentSceneIndex > 0) {
+      setCurrentSceneId(scenes[currentSceneIndex - 1].id);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentSceneIndex < scenes.length - 1) {
+      setCurrentSceneId(scenes[currentSceneIndex + 1].id);
+    }
+  };
+
+  const handleTogglePlay = () => {
+    setIsPlaying((prev) => !prev);
+  };
+
+  const handleReplay = () => {
+    if (scenes[currentSceneIndex]) {
+      setCurrentSceneId(scenes[currentSceneIndex].id);
+    }
+  };
+
+  const handleToggleSubtitles = () => {
+    setSubtitlesEnabled((prev) => !prev);
+  };
+
+  const handleExitTV = () => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tv');
+      window.location.href = url.pathname + (url.search ? url.search : '');
+    }
+  };
+
+  return (
+    <>
+      {/* Living Room TV Top Bar (Safe area header) */}
+      <div className="absolute top-4 left-6 right-6 md:top-8 md:left-10 md:right-10 z-40 flex items-center justify-between pointer-events-auto">
+        {/* Exit TV Button */}
+        <TVFocusable
+          id="tv-header-exit"
+          onSelect={handleExitTV}
+          className="rounded-xl overflow-hidden focus:outline-none"
+        >
+          <button
+            type="button"
+            onClick={handleExitTV}
+            className="flex items-center gap-2 px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white rounded-xl text-sm font-semibold transition-all shadow-md cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Exit TV Mode</span>
+          </button>
+        </TVFocusable>
+
+        {/* Center: Living Room Streak & Catch-Up Badge */}
+        <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/30 rounded-full backdrop-blur-md text-amber-300 text-sm font-semibold shadow-md">
+          <Flame className="w-4 h-4 fill-current text-orange-400 animate-pulse" />
+          <span>3-Day Streak • Living Room Catch-Up Active</span>
+        </div>
+
+        {/* Right: Pair Mobile Companion Pill */}
+        <TVFocusable
+          id="tv-header-companion"
+          onSelect={() => setIsCompanionOpen(true)}
+          className="rounded-xl overflow-hidden focus:outline-none"
+        >
+          <button
+            type="button"
+            onClick={() => setIsCompanionOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-bold shadow-lg transition-all cursor-pointer"
+          >
+            <Smartphone className="w-4 h-4" />
+            <span>📱 Pair Phone</span>
+          </button>
+        </TVFocusable>
+      </div>
+
+      {/* 10-Foot Living Room Subtitle Banner */}
+      {subtitlesEnabled && (
+        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[90%] text-center pointer-events-none">
+          <div className="inline-block bg-black/85 backdrop-blur-md px-8 py-3.5 rounded-2xl border border-white/20 text-2xl font-medium text-white shadow-2xl leading-relaxed">
+            {currentScene?.title || stage?.name || 'Course narration in progress...'}
+          </div>
+        </div>
+      )}
+
+      {/* Floating 10-Foot Playback OSD */}
+      <TVPlaybackOSD
+        currentSceneIndex={currentSceneIndex}
+        totalScenes={totalScenes}
+        isPlaying={isPlaying}
+        onTogglePlay={handleTogglePlay}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onReplay={handleReplay}
+        courseTitle={stage?.name}
+        sceneTitle={currentScene?.title}
+        subtitlesEnabled={subtitlesEnabled}
+        onToggleSubtitles={handleToggleSubtitles}
+      />
+
+      {/* QR Code Companion Modal */}
+      <TVCompanionModal
+        isOpen={isCompanionOpen}
+        onClose={() => setIsCompanionOpen(false)}
+        courseUrl={typeof window !== 'undefined' ? window.location.href : undefined}
+      />
+    </>
+  );
+}
 
 // stage_link can become visible shortly before its document. Probe only that
 // explicit availability gap, with a small bounded backoff; media conversion
@@ -74,9 +211,11 @@ type ClassroomLoadOutcome = 'loaded' | 'unavailable' | 'failed' | 'cancelled';
 export function ClassroomSurface({
   classroomId,
   variant = 'page',
+  forceTVMode,
 }: {
   readonly classroomId: string;
   readonly variant?: 'page' | 'pane';
+  readonly forceTVMode?: boolean;
 }) {
   const { loadFromStorage } = useStageStore();
   const loadedClassroomId = useStageStore((s) => s.stage?.id ?? null);
@@ -392,10 +531,10 @@ export function ClassroomSurface({
           className={
             variant === 'pane'
               ? // A flex CHILD of the pane's row box, so it has to claim both
-                // axes explicitly: `h-full` alone leaves the width to shrink
-                // to content, and the classroom chrome (which layers with
-                // `absolute inset-0`) then has nothing to fill.
-                'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
+              // axes explicitly: `h-full` alone leaves the width to shrink
+              // to content, and the classroom chrome (which layers with
+              // `absolute inset-0`) then has nothing to fill.
+              'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
               : 'h-screen flex flex-col overflow-hidden'
           }
         >
@@ -452,10 +591,15 @@ export function ClassroomSurface({
               </div>
             </div>
           ) : (
-            <Stage
-              classroomId={classroomId}
-              onRetryOutline={mayGenerate ? retrySingleOutline : undefined}
-            />
+            <TVNavigationProvider forceTVMode={forceTVMode}>
+              <div className="relative flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+                <Stage
+                  classroomId={classroomId}
+                  onRetryOutline={mayGenerate ? retrySingleOutline : undefined}
+                />
+                <TVClassroomOverlay />
+              </div>
+            </TVNavigationProvider>
           )}
         </div>
       </MediaStageProvider>

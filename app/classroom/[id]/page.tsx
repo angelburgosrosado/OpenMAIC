@@ -7,7 +7,9 @@ import { useSettingsStore } from '@/lib/store/settings';
 import { claimStageSceneLoadToken, isCurrentStageSceneLoadToken } from '@/lib/store/stage';
 import { loadImageMapping } from '@/lib/utils/image-storage';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { TVNavigationProvider } from '@/components/tv/TVNavigationProvider';
+import { TVClassroomOverlay } from '@/components/classroom/ClassroomSurface';
 import { useSceneGenerator } from '@/lib/hooks/use-scene-generator';
 import { useMediaGenerationStore } from '@/lib/store/media-generation';
 import { useNarrationAdoption } from '@/lib/audio/use-narration-adoption';
@@ -42,6 +44,8 @@ const log = createLogger('Classroom');
 export default function ClassroomDetailPage() {
   const params = useParams();
   const classroomId = params?.id as string;
+  const searchParams = useSearchParams();
+  const forceTVMode = searchParams?.get('tv') === '1';
 
   const { loadFromStorage } = useStageStore();
 
@@ -309,7 +313,12 @@ export default function ClassroomDetailPage() {
               </div>
             </div>
           ) : (
-            <Stage onRetryOutline={mayGenerate ? retrySingleOutline : undefined} />
+            <TVNavigationProvider forceTVMode={forceTVMode}>
+              <div className="relative flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+                <Stage onRetryOutline={mayGenerate ? retrySingleOutline : undefined} />
+                <TVClassroomOverlay />
+              </div>
+            </TVNavigationProvider>
           )}
         </div>
       </MediaStageProvider>

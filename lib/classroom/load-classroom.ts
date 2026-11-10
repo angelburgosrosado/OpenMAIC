@@ -26,6 +26,7 @@ import {
 import { slideMediaReferenceSlots } from '@/lib/media/slide-media-slots';
 import { isConcreteMediaAddress } from '@/lib/media/resolve-media-ref';
 import { createLogger } from '@/lib/logger';
+import { isSampleClassroomId, SAMPLE_CLASSROOM_PAYLOAD } from '@/lib/classroom/sample-course';
 
 const moduleLog = createLogger('ClassroomLoad');
 
@@ -139,8 +140,12 @@ export async function runClassroomLoad<TMediaTasks = unknown>({
       // Once it returns, the document owns every allocation; a later
       // navigation may discard only this in-memory apply, never the durable
       // assets -- so nothing here rolls allocations back.
-      const classroom = await fetchClassroom(classroomId, isCurrent);
+      let classroom = await fetchClassroom(classroomId, isCurrent);
       if (!isCurrent()) return;
+
+      if (!classroom && isSampleClassroomId(classroomId)) {
+        classroom = SAMPLE_CLASSROOM_PAYLOAD;
+      }
 
       if (classroom) {
         const { stage, scenes } = classroom;

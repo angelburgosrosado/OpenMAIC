@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import type { Scene, StageMode } from '@/lib/types/stage';
 import { SlideEditor as SlideRenderer } from '../slide-renderer/Editor';
 import { QuizView } from '../scene-renderers/quiz-view';
+import { TVQuizView } from '../scene-renderers/tv-quiz-view';
+import { useTVNavigation } from '../tv/TVNavigationProvider';
 import { InteractiveRenderer } from '../scene-renderers/interactive-renderer';
 import { PBLRenderer } from '../scene-renderers/pbl-renderer';
 
@@ -18,6 +20,8 @@ interface SceneRendererProps {
  * path, so it does not branch on `mode === 'edit'`.
  */
 export function SceneRenderer({ scene, mode }: SceneRendererProps) {
+  const { isTVMode } = useTVNavigation();
+
   const renderer = useMemo(() => {
     switch (scene.type) {
       case 'slide':
@@ -25,6 +29,16 @@ export function SceneRenderer({ scene, mode }: SceneRendererProps) {
         return <SlideRenderer mode={mode} />;
       case 'quiz':
         if (scene.content.type !== 'quiz') return <div>Invalid quiz content</div>;
+        if (isTVMode) {
+          return (
+            <TVQuizView
+              key={scene.id}
+              questions={scene.content.questions}
+              sceneId={scene.id}
+              stageId={scene.stageId}
+            />
+          );
+        }
         return (
           <QuizView
             key={scene.id}
@@ -42,7 +56,7 @@ export function SceneRenderer({ scene, mode }: SceneRendererProps) {
       default:
         return <div>Unknown scene type</div>;
     }
-  }, [scene, mode]);
+  }, [scene, mode, isTVMode]);
 
   return <div className="w-full h-full">{renderer}</div>;
 }
