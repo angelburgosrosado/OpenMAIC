@@ -1,25 +1,26 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { nanoid } from 'nanoid';
 import { createLogger } from '@/lib/logger';
+import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 import { hashPassword, generateApiKey } from './crypto';
 import type { User, SafeUser, RegisterInput, UserRole, UserTier, UserStatus } from './types';
 
 const log = createLogger('UserStore');
-const DATA_DIR = path.join(process.cwd(), 'data', 'auth');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
+/** Store key: Postgres row when DATABASE_URL is set, else data/auth/users.json. */
+const USERS_KEY = 'auth/users';
 
-// In-memory mutex for serial writes
-let writeLock: Promise<void> = Promise.resolve();
-
-async function withLock<T>(fn: () => Promise<T>): Promise<T> {
-  const next = writeLock.then(fn, fn);
-  writeLock = next.then(() => {}, () => {});
-  return next;
+/** Email that becomes the administrator (set ADMIN_EMAIL in the deployment). */
+function adminEmail(): string | null {
+  const v = process.env.ADMIN_EMAIL?.toLowerCase().trim();
+  return v || null;
 }
 
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
+/**
+ * Dev/test convenience only: outside production an admin with a well-known
+ * password is seeded so the admin pages can be tried locally. Production never
+ * gets a default password.
+ */
+function devDefaultAdminAllowed(): boolean {
+  return process.env.NODE_ENV !== 'production' && !process.env.VERCEL;
 }
 
 export function stripSensitive(user: User): SafeUser {
@@ -28,43 +29,53 @@ export function stripSensitive(user: User): SafeUser {
   return safe;
 }
 
-async function readUsersUnsafe(): Promise<User[]> {
-  try {
-    const raw = await fs.readFile(USERS_FILE, 'utf-8');
-    return JSON.parse(raw) as User[];
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    log.error('Failed to read users file:', err);
-    return [];
-  }
+async function readUsers(): Promise<User[]> {
+  return readDoc<User[]>(USERS_KEY, []);
 }
 
-async function writeUsersUnsafe(users: User[]): Promise<void> {
-  await ensureDataDir();
-  const tmpFile = `${USERS_FILE}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmpFile, JSON.stringify(users, null, 2), 'utf-8');
-  await fs.rename(tmpFile, USERS_FILE);
+/** Read-modify-write the user list atomically. */
+function mutateUsers<R>(fn: (users: User[]) => R | Promise<R>): Promise<R> {
+  return updateDoc<User[], R>(USERS_KEY, [], async (users) => {
+    const result = await fn(users);
+    return { value: users, result };
+  });
 }
 
 /**
- * Initialize default admin user if none exists
+ * Seed an administrator when none exists.
+ *
+ * - ADMIN_EMAIL + ADMIN_PASSWORD set: seeds that account (any environment).
+ * - Otherwise, only in local development/tests: seeds admin@openmaic.io with a
+ *   well-known password. In production nothing is seeded; instead the first
+ *   account registered with ADMIN_EMAIL becomes the administrator.
+ * Returns the admin, or null when no admin exists and none may be seeded.
  */
-export async function ensureDefaultAdmin(): Promise<User> {
-  return withLock(async () => {
-    const users = await readUsersUnsafe();
-    const existingAdmin = users.find((u) => u.role === 'admin');
-    if (existingAdmin) return existingAdmin;
+export async function ensureDefaultAdmin(): Promise<User | null> {
+  const existing = (await readUsers()).find((u) => u.role === 'admin');
+  if (existing) return existing;
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@openmaic.io';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123456';
-    const { hash, salt } = hashPassword(adminPassword);
+  const envEmail = adminEmail();
+  const envPassword = process.env.ADMIN_PASSWORD;
+  let email: string;
+  let password: string;
+  if (envEmail && envPassword) {
+    email = envEmail;
+    password = envPassword;
+  } else if (devDefaultAdminAllowed()) {
+    email = 'admin@openmaic.io';
+    password = 'admin123456';
+  } else {
+    return null;
+  }
 
+  return mutateUsers((users) => {
+    const again = users.find((u) => u.role === 'admin');
+    if (again) return again;
+    const { hash, salt } = hashPassword(password);
     const now = new Date().toISOString();
     const adminUser: User = {
       id: `usr_${nanoid(12)}`,
-      email: adminEmail.toLowerCase().trim(),
+      email,
       passwordHash: hash,
       passwordSalt: salt,
       name: 'System Administrator',
@@ -72,7 +83,7 @@ export async function ensureDefaultAdmin(): Promise<User> {
       tier: 'enterprise',
       status: 'active',
       avatar: '/avatars/teacher-2.png',
-      bio: 'OpenMAIC Platform Administrator',
+      bio: 'QuéWhat Platform Administrator',
       tokenBalance: 50_000_000,
       monthlyAllowance: 50_000_000,
       tokensUsedThisMonth: 0,
@@ -81,23 +92,21 @@ export async function ensureDefaultAdmin(): Promise<User> {
       createdAt: now,
       updatedAt: now,
     };
-
     users.push(adminUser);
-    await writeUsersUnsafe(users);
-    log.info(`Initialized default administrator account: ${adminEmail}`);
+    log.info(`Initialized administrator account: ${email}`);
     return adminUser;
   });
 }
 
 export async function getUserById(id: string): Promise<User | null> {
   await ensureDefaultAdmin();
-  const users = await readUsersUnsafe();
+  const users = await readUsers();
   return users.find((u) => u.id === id) || null;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   await ensureDefaultAdmin();
-  const users = await readUsersUnsafe();
+  const users = await readUsers();
   const normalized = email.toLowerCase().trim();
   return users.find((u) => u.email.toLowerCase() === normalized) || null;
 }
@@ -105,7 +114,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getUserByApiKey(apiKey: string): Promise<User | null> {
   if (!apiKey) return null;
   await ensureDefaultAdmin();
-  const users = await readUsersUnsafe();
+  const users = await readUsers();
   return users.find((u) => u.apiKey === apiKey && u.status === 'active') || null;
 }
 
@@ -118,8 +127,7 @@ export async function createUser(
     avatar?: string;
   },
 ): Promise<User> {
-  return withLock(async () => {
-    const users = await readUsersUnsafe();
+  return mutateUsers((users) => {
     const normalizedEmail = input.email.toLowerCase().trim();
 
     if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
@@ -129,6 +137,9 @@ export async function createUser(
     const { hash, salt } = hashPassword(input.password);
     const now = new Date().toISOString();
     const initialTokens = options?.initialTokens ?? 250_000; // 250k free starter bonus tokens
+    // The deployment's ADMIN_EMAIL becomes the administrator when no admin exists yet.
+    const becomesAdmin =
+      adminEmail() === normalizedEmail && !users.some((u) => u.role === 'admin');
 
     const newUser: User = {
       id: `usr_${nanoid(12)}`,
@@ -136,8 +147,8 @@ export async function createUser(
       passwordHash: hash,
       passwordSalt: salt,
       name: input.name.trim() || 'New Learner',
-      role: options?.role || 'user',
-      tier: options?.tier || 'free',
+      role: becomesAdmin ? 'admin' : options?.role || 'user',
+      tier: becomesAdmin ? 'enterprise' : options?.tier || 'free',
       status: 'active',
       avatar: options?.avatar || '/avatars/user.png',
       tokenBalance: initialTokens,
@@ -150,7 +161,6 @@ export async function createUser(
     };
 
     users.push(newUser);
-    await writeUsersUnsafe(users);
     log.info(`Created new user account: ${newUser.email} (${newUser.id})`);
     return newUser;
   });
@@ -160,8 +170,7 @@ export async function updateUser(
   id: string,
   updates: Partial<Omit<User, 'id' | 'createdAt'>>,
 ): Promise<User> {
-  return withLock(async () => {
-    const users = await readUsersUnsafe();
+  return mutateUsers((users) => {
     const index = users.findIndex((u) => u.id === id);
     if (index === -1) {
       throw new Error(`User ${id} not found`);
@@ -175,14 +184,12 @@ export async function updateUser(
     };
 
     users[index] = updated;
-    await writeUsersUnsafe(users);
     return updated;
   });
 }
 
 export async function deleteUser(id: string): Promise<boolean> {
-  return withLock(async () => {
-    const users = await readUsersUnsafe();
+  return mutateUsers((users) => {
     const index = users.findIndex((u) => u.id === id);
     if (index === -1) return false;
 
@@ -195,7 +202,6 @@ export async function deleteUser(id: string): Promise<boolean> {
     }
 
     users.splice(index, 1);
-    await writeUsersUnsafe(users);
     log.info(`Deleted user ${id}`);
     return true;
   });
@@ -218,7 +224,7 @@ export async function listUsers(opts: ListUsersOptions = {}): Promise<{
   totalPages: number;
 }> {
   await ensureDefaultAdmin();
-  const allUsers = await readUsersUnsafe();
+  const allUsers = await readUsers();
 
   let filtered = allUsers;
 
@@ -264,8 +270,7 @@ export async function adjustUserTokenBalance(
   deltaTokens: number,
   consumed = false,
 ): Promise<User> {
-  return withLock(async () => {
-    const users = await readUsersUnsafe();
+  return mutateUsers((users) => {
     const index = users.findIndex((u) => u.id === id);
     if (index === -1) {
       throw new Error(`User ${id} not found`);
@@ -284,7 +289,6 @@ export async function adjustUserTokenBalance(
     };
 
     users[index] = updated;
-    await writeUsersUnsafe(users);
     return updated;
   });
 }

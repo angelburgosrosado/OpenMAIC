@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { nanoid } from 'nanoid';
 import { createLogger } from '@/lib/logger';
 import { getUserById, updateUser, adjustUserTokenBalance } from '@/lib/server/auth/user-store';
@@ -12,30 +10,12 @@ import type {
   CreditPack,
 } from './types';
 import type { UserTier } from '@/lib/server/auth/types';
+import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 
 const log = createLogger('MonetizationStore');
-const DATA_DIR = path.join(process.cwd(), 'data', 'monetization');
-const PROMO_CODES_FILE = path.join(DATA_DIR, 'promo-codes.json');
-const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
-
-let promoLock: Promise<void> = Promise.resolve();
-let txLock: Promise<void> = Promise.resolve();
-
-async function withPromoLock<T>(fn: () => Promise<T>): Promise<T> {
-  const next = promoLock.then(fn, fn);
-  promoLock = next.then(() => {}, () => {});
-  return next;
-}
-
-async function withTxLock<T>(fn: () => Promise<T>): Promise<T> {
-  const next = txLock.then(fn, fn);
-  txLock = next.then(() => {}, () => {});
-  return next;
-}
-
-async function ensureDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
+/** Postgres when DATABASE_URL is set, else data/monetization/*.json. */
+const PROMO_KEY = 'monetization/promo-codes';
+const TX_KEY = 'monetization/transactions';
 
 // ── Promo Codes ──────────────────────────────────────────
 
@@ -68,35 +48,28 @@ const INITIAL_PROMO_CODES: PromoCode[] = [
   },
 ];
 
-async function readPromoCodesUnsafe(): Promise<PromoCode[]> {
-  try {
-    const raw = await fs.readFile(PROMO_CODES_FILE, 'utf-8');
-    return JSON.parse(raw) as PromoCode[];
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      await writePromoCodesUnsafe(INITIAL_PROMO_CODES);
-      return INITIAL_PROMO_CODES;
-    }
-    return [];
-  }
+/**
+ * Demo codes are published in the open-source repo, so they are only seeded
+ * outside production. A live deployment starts with no codes; admins create
+ * their own from the admin page.
+ */
+function seedPromoCodes(): PromoCode[] {
+  return process.env.NODE_ENV === 'production' || process.env.VERCEL ? [] : INITIAL_PROMO_CODES;
 }
 
-async function writePromoCodesUnsafe(codes: PromoCode[]): Promise<void> {
-  await ensureDir();
-  const tmp = `${PROMO_CODES_FILE}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(codes, null, 2), 'utf-8');
-  await fs.rename(tmp, PROMO_CODES_FILE);
-}
-
-export async function listPromoCodes(): Promise<PromoCode[]> {
-  return withPromoLock(async () => {
-    return readPromoCodesUnsafe();
+function mutatePromoCodes<R>(fn: (codes: PromoCode[]) => R | Promise<R>): Promise<R> {
+  return updateDoc<PromoCode[], R>(PROMO_KEY, seedPromoCodes(), async (codes) => {
+    const result = await fn(codes);
+    return { value: codes, result };
   });
 }
 
+export async function listPromoCodes(): Promise<PromoCode[]> {
+  return readDoc<PromoCode[]>(PROMO_KEY, seedPromoCodes());
+}
+
 export async function createPromoCode(input: Omit<PromoCode, 'usedCount' | 'createdAt'>): Promise<PromoCode> {
-  return withPromoLock(async () => {
-    const codes = await readPromoCodesUnsafe();
+  return mutatePromoCodes((codes) => {
     const upperCode = input.code.toUpperCase().trim();
     if (codes.some((c) => c.code === upperCode)) {
       throw new Error(`Promo code ${upperCode} already exists`);
@@ -110,68 +83,39 @@ export async function createPromoCode(input: Omit<PromoCode, 'usedCount' | 'crea
     };
 
     codes.push(newCode);
-    await writePromoCodesUnsafe(codes);
     return newCode;
   });
 }
 
 export async function deletePromoCode(code: string): Promise<boolean> {
-  return withPromoLock(async () => {
-    const codes = await readPromoCodesUnsafe();
+  return mutatePromoCodes((codes) => {
     const upperCode = code.toUpperCase().trim();
     const index = codes.findIndex((c) => c.code === upperCode);
     if (index === -1) return false;
     codes.splice(index, 1);
-    await writePromoCodesUnsafe(codes);
     return true;
   });
 }
 
 // ── Transactions ──────────────────────────────────────────
 
-async function readTransactionsUnsafe(): Promise<Transaction[]> {
-  try {
-    const raw = await fs.readFile(TRANSACTIONS_FILE, 'utf-8');
-    return JSON.parse(raw) as Transaction[];
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    return [];
-  }
-}
-
-async function writeTransactionsUnsafe(txs: Transaction[]): Promise<void> {
-  await ensureDir();
-  const tmp = `${TRANSACTIONS_FILE}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(txs, null, 2), 'utf-8');
-  await fs.rename(tmp, TRANSACTIONS_FILE);
-}
-
 export async function recordTransaction(
   tx: Omit<Transaction, 'id' | 'createdAt'>,
 ): Promise<Transaction> {
-  return withTxLock(async () => {
-    const all = await readTransactionsUnsafe();
+  return updateDoc<Transaction[], Transaction>(TX_KEY, [], (all) => {
     const newTx: Transaction = {
       ...tx,
       id: `tx_${nanoid(14)}`,
       createdAt: new Date().toISOString(),
     };
     all.unshift(newTx); // most recent first
-    await writeTransactionsUnsafe(all);
-    return newTx;
+    return { value: all, result: newTx };
   });
 }
 
 export async function listTransactions(userId?: string): Promise<Transaction[]> {
-  return withTxLock(async () => {
-    const all = await readTransactionsUnsafe();
-    if (userId) {
-      return all.filter((t) => t.userId === userId);
-    }
-    return all;
-  });
+  const all = await readDoc<Transaction[]>(TX_KEY, []);
+  return userId ? all.filter((t) => t.userId === userId) : all;
 }
 
 // ── Redemption & Checkout Flows ────────────────────────────
@@ -186,8 +130,7 @@ export async function redeemPromoCode(
   const cleanCode = codeString.toUpperCase().trim();
 
   // Atomically claim promo code usage
-  const target = await withPromoLock(async () => {
-    const codes = await readPromoCodesUnsafe();
+  const target = await mutatePromoCodes((codes) => {
     const promo = codes.find((c) => c.code === cleanCode);
 
     if (!promo) {
@@ -204,7 +147,6 @@ export async function redeemPromoCode(
     }
 
     promo.usedCount += 1;
-    await writePromoCodesUnsafe(codes);
     return { ...promo };
   });
 

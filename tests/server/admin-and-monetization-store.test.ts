@@ -24,8 +24,8 @@ import {
 
 describe('Admin, Users & Monetization Store Integration', () => {
   it('seeds default admin user with valid credentials and enterprise tier', async () => {
-    const admin = await ensureDefaultAdmin();
-    expect(admin).toBeDefined();
+    const admin = (await ensureDefaultAdmin())!;
+    expect(admin).toBeTruthy();
     expect(admin.role).toBe('admin');
     expect(admin.tier).toBe('enterprise');
     expect(admin.tokenBalance).toBeGreaterThanOrEqual(10_000_000);
