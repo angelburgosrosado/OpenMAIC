@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QuéWhat — sin conexión / offline</title>
+<style>
+  html,body{margin:0;height:100%;background:#6B4A2E;font-family:system-ui,sans-serif}
+  main{box-sizing:border-box;margin:12px;min-height:calc(100% - 24px);background:#1F3B2D;border-radius:10px;color:#F7F5EE;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px}
+  h1{font-size:clamp(40px,8vw,72px);margin:0}
+  p{font-size:clamp(17px,2.4vw,26px);font-weight:700;margin:0;color:#C9D6CD}
+  button{font:inherit;font-weight:900;font-size:clamp(18px,2.4vw,26px);min-height:60px;padding:0 36px;border:0;border-radius:16px;
+    background:#F6D365;color:#1F3B2D;box-shadow:0 0 0 4px #1F3B2D,0 0 0 8px #F7F5EE;cursor:pointer}
+  button:focus{outline:4px solid #E0A82E;outline-offset:6px}
+</style>
+</head>
+<body>
+<main>
+  <h1>¿QuéWhat?</h1>
+  <p>No hay conexión a internet.<br>No internet connection.</p>
+  <button id="retry" autofocus>Reintentar · Try again</button>
+</main>
+<script>
+  document.getElementById('retry').addEventListener('click', function () { location.href = 'https://www.quewhat.com'; });
+  window.addEventListener('online', function () { location.href = 'https://www.quewhat.com'; });
+</script>
+</body>
+</html>

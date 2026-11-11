@@ -1,0 +1,77 @@
+name: Android app (phones, Fire tablets, Android TV, Fire TV)
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      QW_VERSION_CODE: ${{ github.run_number }}
+      QW_VERSION_NAME: 1.0.${{ github.run_number }}
+      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install and sync Capacitor
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Build test APK
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quewhat-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug/*.apk
+
+      # Signed builds for Google Play (.aab) and the Amazon Appstore (.apk).
+      # Runs only after the signing secrets are added to the repository.
+      - name: Decode signing key
+        if: ${{ github.event_name != 'pull_request' && env.HAS_KEY == 'true' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/quewhat.keystore"
+
+      - name: Build signed release
+        if: ${{ github.event_name != 'pull_request' && env.HAS_KEY == 'true' }}
+        working-directory: mobile/android
+        env:
+          QW_KEYSTORE_PATH: ${{ runner.temp }}/quewhat.keystore
+          QW_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          QW_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          QW_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon bundleRelease assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name != 'pull_request' && hashFiles('mobile/android/app/build/outputs/bundle/release/*.aab') != '' }}
+        with:
+          name: quewhat-release
+          path: |
+            mobile/android/app/build/outputs/bundle/release/*.aab
+            mobile/android/app/build/outputs/apk/release/*.apk

@@ -35,6 +35,7 @@
     "dist",
     "packages/*/src",
     "packages/docs",
+    "mobile",
     "openclaw",
     "e2e",
     "render-service"

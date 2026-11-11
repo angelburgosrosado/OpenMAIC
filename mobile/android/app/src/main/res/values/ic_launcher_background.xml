@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#1F3B2D</color>
+    <color name="quewhat_board">#1F3B2D</color>
+    <color name="quewhat_chalk">#F7F5EE</color>
+    <color name="quewhat_yellow">#F6D365</color>
+</resources>
