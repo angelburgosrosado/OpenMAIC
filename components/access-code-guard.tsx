@@ -38,7 +38,7 @@ export function AccessCodeGuard({ children }: { children: ReactNode }) {
 
   // Family phones join a quiz with just the game code (no site password).
   const pathname = usePathname();
-  const publicPage = pathname === '/join';
+  const publicPage = ['/join', '/privacy', '/terms'].includes(pathname);
   const needsAuth = !publicPage && !status.loading && status.enabled && !status.authenticated;
 
   return (

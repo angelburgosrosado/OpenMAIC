@@ -30,6 +30,7 @@ interface AuthState {
     password: string,
     name?: string,
     promoCode?: string,
+    consent?: { adultConfirmed: boolean; acceptTerms: boolean },
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: { name?: string; avatar?: string; bio?: string }) => Promise<void>;
@@ -105,12 +106,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (email, password, name, promoCode) => {
+  register: async (email, password, name, promoCode, consent) => {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, promoCode }),
+        body: JSON.stringify({ email, password, name, promoCode, ...consent }),
       });
       const data = await res.json();
       if (!res.ok || data.success === false) {

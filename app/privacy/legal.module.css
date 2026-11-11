@@ -1,0 +1,93 @@
+.page {
+  min-height: 100vh;
+  background: #6b4a2e;
+  padding: 12px;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+.paper {
+  max-width: 860px;
+  margin: 0 auto;
+  background: #f7f5ee;
+  color: #1f2a24;
+  border-radius: 10px;
+  padding: clamp(20px, 4vw, 56px);
+  line-height: 1.65;
+  font-size: 17px;
+}
+.head {
+  background: #1f3b2d;
+  color: #f7f5ee;
+  margin: calc(-1 * clamp(20px, 4vw, 56px));
+  margin-bottom: 28px;
+  padding: 22px clamp(20px, 4vw, 56px);
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.logo {
+  font-family: 'Cabin Sketch', cursive;
+  font-weight: 700;
+  font-size: 30px;
+  color: #f7f5ee;
+  text-decoration: none;
+}
+.nav {
+  display: flex;
+  gap: 16px;
+  font-weight: 800;
+}
+.nav a {
+  color: #f6d365;
+}
+.paper h1 {
+  font-family: 'Cabin Sketch', cursive;
+  font-size: clamp(32px, 5vw, 46px);
+  color: #1f3b2d;
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+.paper h2 {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1f3b2d;
+  margin: 32px 0 8px;
+}
+.paper h3 {
+  font-size: 18px;
+  font-weight: 900;
+  margin: 20px 0 6px;
+}
+.paper a {
+  color: #1f5c3d;
+  font-weight: 700;
+}
+.paper ul {
+  padding-left: 22px;
+}
+.paper li {
+  margin: 4px 0;
+}
+.meta {
+  color: #5a6b60;
+  font-weight: 700;
+  font-size: 15px;
+}
+.paper :global(.callout) {
+  background: #fff6d6;
+  border-left: 6px solid #f6d365;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 20px 0;
+}
+.paper :global(.lang) {
+  border-top: 3px dashed #c9d6cd;
+  margin-top: 48px;
+  padding-top: 8px;
+}
+.paper :focus-visible {
+  outline: 4px solid #e0a82e;
+  outline-offset: 3px;
+}

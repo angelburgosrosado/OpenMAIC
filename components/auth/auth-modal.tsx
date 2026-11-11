@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,8 @@ export function AuthModal() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [promoCode, setPromoCode] = useState('');
+  const [adult, setAdult] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -76,8 +79,22 @@ export function AuthModal() {
       return;
     }
 
+    if (!adult) {
+      toast.error(
+        'Accounts are for adults 18+. Kids can learn with a parent or guardian’s account.',
+      );
+      return;
+    }
+    if (!agree) {
+      toast.error('Please accept the Terms of Service and Privacy Policy');
+      return;
+    }
+
     setLoading(true);
-    const result = await register(email, password, name, promoCode);
+    const result = await register(email, password, name, promoCode, {
+      adultConfirmed: true,
+      acceptTerms: true,
+    });
     setLoading(false);
 
     if (result.success) {
@@ -104,13 +121,15 @@ export function AuthModal() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>QuéWhat</span>
             </div>
-            <button
-              type="button"
-              onClick={fillDemoAdmin}
-              className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
-            >
-              Demo Admin Auto-fill
-            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                type="button"
+                onClick={fillDemoAdmin}
+                className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
+              >
+                Demo Admin Auto-fill
+              </button>
+            )}
           </div>
 
           <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">
@@ -200,9 +219,43 @@ export function AuthModal() {
                 </div>
               </div>
 
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-emerald-700"
+                    checked={adult}
+                    onChange={(e) => setAdult(e.target.checked)}
+                  />
+                  <span>
+                    I’m 18 or older (a parent, guardian, teacher or adult learner). Kids learn
+                    through a grown-up’s account.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-emerald-700"
+                    checked={agree}
+                    onChange={(e) => setAgree(e.target.checked)}
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <Link href="/terms" target="_blank" className="underline font-semibold">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" target="_blank" className="underline font-semibold">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+              </div>
+
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !adult || !agree}
                 className="w-full bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-md shadow-violet-500/20"
               >
                 {loading ? 'Signing in...' : 'Sign In'}
@@ -272,16 +325,18 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="signup-promo" className="text-xs font-medium flex items-center justify-between">
+                <Label
+                  htmlFor="signup-promo"
+                  className="text-xs font-medium flex items-center justify-between"
+                >
                   <span>Invite or Promo Code (Optional)</span>
-                  <span className="text-[10px] text-violet-500 font-semibold">Try: WELCOME100K</span>
                 </Label>
                 <div className="relative">
                   <Tag className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="signup-promo"
                     type="text"
-                    placeholder="WELCOME100K"
+                    placeholder="CODE"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                     className="pl-9 text-sm uppercase tracking-wider"

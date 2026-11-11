@@ -17,6 +17,8 @@ const T = {
     code: 'Game code',
     name: 'Your name',
     namePh: 'e.g. Abuela',
+    nameTip: 'Use a first name or nickname. It’s deleted after the game.',
+    privacy: 'Privacy',
     join: 'Join',
     joining: 'Joining…',
     youreIn: 'You’re in!',
@@ -43,6 +45,8 @@ const T = {
     code: 'Código del juego',
     name: 'Tu nombre',
     namePh: 'ej. Abuela',
+    nameTip: 'Usa tu nombre de pila o un apodo. Se borra al terminar el juego.',
+    privacy: 'Privacidad',
     join: 'Entrar',
     joining: 'Entrando…',
     youreIn: '¡Estás dentro!',
@@ -234,7 +238,17 @@ export default function QuizPlayer() {
                   placeholder={t.namePh}
                   onChange={(e) => setName(e.target.value)}
                   autoFocus={code.length === 4}
+                  aria-describedby="jn-tip"
                 />
+                <small id="jn-tip" style={{ color: 'var(--muted)', fontWeight: 700 }}>
+                  {t.nameTip}{' '}
+                  <a
+                    href={lang === 'es' ? '/privacy#es' : '/privacy'}
+                    style={{ color: 'var(--yellow)' }}
+                  >
+                    {t.privacy}
+                  </a>
+                </small>
               </div>
               <button className={s.btn} disabled={busy || code.length !== 4 || !name.trim()}>
                 {busy ? t.joining : t.join}
