@@ -1,7 +1,21 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'node:crypto';
 
 const KEY_LEN = 64;
-const DEFAULT_SECRET = process.env.ACCESS_CODE || process.env.AUTH_SECRET || 'openmaic-secret-key-salt-2026';
+const DEV_SECRET = 'openmaic-dev-only-secret';
+
+/**
+ * Secret used to sign session cookies. Production must set AUTH_SECRET: it is
+ * never derived from ACCESS_CODE (which is shared with every tester) or a
+ * hardcoded value, either of which would let someone forge a session.
+ */
+export function getAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (secret && secret.length >= 32) return secret;
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    throw new Error('AUTH_SECRET (32+ characters) must be set to sign sessions in production');
+  }
+  return secret || DEV_SECRET;
+}
 
 /**
  * Hash a password using scrypt with a unique random salt
@@ -45,7 +59,7 @@ export function generateApiKey(): string {
 /**
  * Sign an arbitrary payload (e.g. userId.timestamp)
  */
-export function signPayload(payload: string, secret = DEFAULT_SECRET): string {
+export function signPayload(payload: string, secret = getAuthSecret()): string {
   const signature = createHmac('sha256', secret).update(payload).digest('hex');
   return `${payload}.${signature}`;
 }
@@ -53,7 +67,7 @@ export function signPayload(payload: string, secret = DEFAULT_SECRET): string {
 /**
  * Verify a signed payload and return the original data if valid
  */
-export function verifySignedPayload(signedData: string, secret = DEFAULT_SECRET): string | null {
+export function verifySignedPayload(signedData: string, secret = getAuthSecret()): string | null {
   const dotIndex = signedData.lastIndexOf('.');
   if (dotIndex === -1) return null;
 

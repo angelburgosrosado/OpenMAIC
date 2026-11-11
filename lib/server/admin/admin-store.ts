@@ -1,15 +1,14 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { nanoid } from 'nanoid';
 import { createLogger } from '@/lib/logger';
 import { listUsers } from '@/lib/server/auth/user-store';
 import { getRevenueMetrics, listTransactions } from '@/lib/server/monetization/monetization-store';
 import { readUsageRecords } from '@/lib/server/usage-storage';
+import { appendLog, readDoc, readLog, updateDoc } from '@/lib/server/app-store/json-store';
 
 const log = createLogger('AdminStore');
-const DATA_DIR = path.join(process.cwd(), 'data', 'admin');
-const SETTINGS_FILE = path.join(DATA_DIR, 'app-settings.json');
-const AUDIT_LOG_FILE = path.join(DATA_DIR, 'audit-logs.jsonl');
+/** Postgres when DATABASE_URL is set, else data/admin/app-settings.json and audit-logs.jsonl. */
+const SETTINGS_KEY = 'admin/app-settings';
+const AUDIT_STREAM = 'admin/audit-logs';
 
 export interface AppSettings {
   allowRegistrations: boolean;
@@ -28,8 +27,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   allowRegistrations: true,
   defaultTokensOnSignup: 250_000,
   maintenanceMode: false,
-  maintenanceMessage: 'OpenMAIC is undergoing brief scheduled maintenance. We will be back online shortly.',
-  systemAnnouncement: '🚀 Welcome to OpenMAIC! Explore the new Monetization & Token Calculator tools.',
+  maintenanceMessage: 'QuéWhat is undergoing brief scheduled maintenance. We will be back online shortly.',
+  systemAnnouncement: '',
   requireEmailVerification: false,
   freeTierDailyCourseLimit: 3,
   paymentMode: 'simulated',
@@ -47,22 +46,12 @@ export interface AuditLogEntry {
   details: string;
 }
 
-async function ensureDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
 export async function getAppSettings(): Promise<AppSettings> {
   try {
-    const raw = await fs.readFile(SETTINGS_FILE, 'utf-8');
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      await ensureDir();
-      const tmp = `${SETTINGS_FILE}.${process.pid}.${Date.now()}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(DEFAULT_SETTINGS, null, 2), 'utf-8');
-      await fs.rename(tmp, SETTINGS_FILE);
-      return DEFAULT_SETTINGS;
-    }
+    const stored = await readDoc<Partial<AppSettings> | null>(SETTINGS_KEY, null);
+    return { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
+  } catch (err) {
+    log.error('Failed to read app settings; using defaults:', err);
     return DEFAULT_SETTINGS;
   }
 }
@@ -71,38 +60,26 @@ export async function updateAppSettings(
   updates: Partial<AppSettings>,
   adminEmail?: string,
 ): Promise<AppSettings> {
-  await ensureDir();
-  let current: AppSettings = DEFAULT_SETTINGS;
-  try {
-    const raw = await fs.readFile(SETTINGS_FILE, 'utf-8');
-    current = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch {
-    // fallback to DEFAULT_SETTINGS
-  }
-
-  const updated: AppSettings = {
-    ...current,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-    updatedBy: adminEmail || current.updatedBy,
-  };
-
-  const tmp = `${SETTINGS_FILE}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(updated, null, 2), 'utf-8');
-  await fs.rename(tmp, SETTINGS_FILE);
-  return updated;
+  return updateDoc<Partial<AppSettings> | null, AppSettings>(SETTINGS_KEY, null, (stored) => {
+    const current: AppSettings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
+    const updated: AppSettings = {
+      ...current,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminEmail || current.updatedBy,
+    };
+    return { value: updated, result: updated };
+  });
 }
 
 export async function logAuditEvent(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<void> {
-  await ensureDir();
   const logItem: AuditLogEntry = {
     ...entry,
     id: `aud_${nanoid(12)}`,
     timestamp: new Date().toISOString(),
   };
-
   try {
-    await fs.appendFile(AUDIT_LOG_FILE, JSON.stringify(logItem) + '\n', 'utf-8');
+    await appendLog(AUDIT_STREAM, logItem);
   } catch (err) {
     log.error('Failed to append audit log:', err);
   }
@@ -110,21 +87,9 @@ export async function logAuditEvent(entry: Omit<AuditLogEntry, 'id' | 'timestamp
 
 export async function listAuditLogs(limit = 100): Promise<AuditLogEntry[]> {
   try {
-    const content = await fs.readFile(AUDIT_LOG_FILE, 'utf-8');
-    const lines = content.trim().split('\n').filter(Boolean);
-    const parsed: AuditLogEntry[] = [];
-    for (let i = lines.length - 1; i >= 0 && parsed.length < limit; i--) {
-      try {
-        parsed.push(JSON.parse(lines[i]));
-      } catch {
-        // ignore malformed line
-      }
-    }
-    return parsed;
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
+    return await readLog<AuditLogEntry>(AUDIT_STREAM, { limit, newestFirst: true });
+  } catch (err) {
+    log.error('Failed to read audit logs:', err);
     return [];
   }
 }

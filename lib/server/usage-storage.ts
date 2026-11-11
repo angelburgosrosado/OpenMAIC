@@ -2,6 +2,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { createLogger } from '@/lib/logger';
 import { hasBillableTokens, type NormalizedUsage } from '@/lib/usage/normalize';
+import { appendLog, readLog, usingDatabase } from '@/lib/server/app-store/json-store';
+
+/** Database log stream used when DATABASE_URL is set (no explicit baseDir). */
+const USAGE_STREAM = 'usage';
 
 const log = createLogger('UsageStorage');
 
@@ -127,6 +131,10 @@ export async function recordUsage(
       ...(input.unit ? { unit: input.unit } : {}),
     };
 
+    if (!opts.baseDir && usingDatabase()) {
+      await appendLog(USAGE_STREAM, record);
+      return;
+    }
     const dir = usageDir(opts.baseDir);
     await fs.mkdir(dir, { recursive: true });
     await fs.appendFile(monthlyFile(dir, now), JSON.stringify(record) + '\n', 'utf-8');
@@ -176,6 +184,22 @@ interface ReadOptions {
  * 'llm'; any legacy cost fields are simply ignored.
  */
 export async function readUsageRecords(opts: ReadOptions = {}): Promise<UsageRecord[]> {
+  if (!opts.baseDir && usingDatabase()) {
+    try {
+      const rows = await readLog<UsageRecord>(USAGE_STREAM);
+      return rows
+        .filter((r) => {
+          if (!opts.months?.length) return true;
+          const d = new Date(r.createdAt);
+          const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+          return opts.months.includes(ym);
+        })
+        .map((r) => (r.kind ? r : { ...r, kind: 'llm' as const }));
+    } catch (err) {
+      log.warn('Failed to read usage records from the database:', err);
+      return [];
+    }
+  }
   const dir = usageDir(opts.baseDir);
   let files: string[];
   try {

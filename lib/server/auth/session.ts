@@ -19,10 +19,18 @@ export function createSessionToken(userId: string): string {
  * Extracts and verifies the userId from a signed session token
  */
 export function parseSessionToken(token: string): string | null {
-  const payload = verifySignedPayload(token);
+  let payload: string | null;
+  try {
+    payload = verifySignedPayload(token);
+  } catch {
+    return null; // signing secret not configured
+  }
   if (!payload) return null;
-  const [userId] = payload.split(':');
-  return userId || null;
+  const [userId, issued] = payload.split(':');
+  const issuedAt = parseInt(issued ?? '', 36);
+  if (!userId || !Number.isFinite(issuedAt)) return null;
+  if (Date.now() - issuedAt > SESSION_MAX_AGE_SECONDS * 1000) return null; // expired
+  return userId;
 }
 
 /**
