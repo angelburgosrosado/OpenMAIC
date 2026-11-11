@@ -56,8 +56,14 @@ async function getPool(): Promise<PoolLike> {
   }
   if (!injectedPool && !pool) {
     const { Pool: PgPool } = await import('pg');
+    // Neon URLs say sslmode=require, which pg already treats as verify-full;
+    // say so explicitly to keep full certificate verification and silence pg's notice.
+    const connectionString = (process.env.DATABASE_URL ?? '').replace(
+      /([?&])sslmode=(?:prefer|require|verify-ca)(?=&|$)/,
+      '$1sslmode=verify-full',
+    );
     pool = new PgPool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: Number(process.env.APP_STORE_POOL_MAX || 3),
       idleTimeoutMillis: 10_000,
     });
