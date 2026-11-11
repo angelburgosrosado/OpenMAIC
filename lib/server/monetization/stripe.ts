@@ -13,11 +13,17 @@
 
 import type Stripe from 'stripe';
 import { createLogger } from '@/lib/logger';
+import { logAuditEvent } from '@/lib/server/admin/admin-store';
 import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 import { getUserById, getUserByStripeCustomerId, updateUser } from '@/lib/server/auth/user-store';
 import type { User } from '@/lib/server/auth/types';
 import { CREDIT_PACKS, PRICING_PLANS } from './plans';
-import { processBuyCreditPack, processCheckoutPlan, recordTransaction } from './monetization-store';
+import {
+  markTransactionRefunded,
+  processBuyCreditPack,
+  processCheckoutPlan,
+  recordTransaction,
+} from './monetization-store';
 
 const log = createLogger('Stripe');
 
@@ -54,7 +60,11 @@ export type CheckoutRequest =
   | { type: 'credit_pack'; packId: string };
 
 /** Create a hosted Checkout session and return its URL. */
-export async function createCheckoutSession(user: User, req: CheckoutRequest, origin: string): Promise<string> {
+export async function createCheckoutSession(
+  user: User,
+  req: CheckoutRequest,
+  origin: string,
+): Promise<string> {
   const stripe = await getStripe();
   const base = (process.env.APP_URL || origin).replace(/\/$/, '');
   const common = {
@@ -62,7 +72,9 @@ export async function createCheckoutSession(user: User, req: CheckoutRequest, or
     success_url: `${base}/?checkout=success`,
     cancel_url: `${base}/?checkout=cancel`,
     allow_promotion_codes: true,
-    ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
+    ...(user.stripeCustomerId
+      ? { customer: user.stripeCustomerId }
+      : { customer_email: user.email }),
   };
 
   if (req.type === 'plan') {
@@ -70,7 +82,12 @@ export async function createCheckoutSession(user: User, req: CheckoutRequest, or
     if (!plan) throw new Error(`Plan ${req.planId} not found`);
     const price = req.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
     if (price <= 0) throw new Error('The free plan does not need checkout');
-    const metadata = { userId: user.id, type: 'plan', planId: plan.id, billingCycle: req.billingCycle };
+    const metadata = {
+      userId: user.id,
+      type: 'plan',
+      planId: plan.id,
+      billingCycle: req.billingCycle,
+    };
     const session = await stripe.checkout.sessions.create({
       ...common,
       mode: 'subscription',
@@ -87,6 +104,8 @@ export async function createCheckoutSession(user: User, req: CheckoutRequest, or
       ],
       metadata,
       subscription_data: { metadata },
+      // Dashboard label for comparing checkout flows.
+      integration_identifier: 'quewhat-plans-kmrtpzvy',
     });
     if (!session.url) throw new Error('Stripe did not return a checkout URL');
     return session.url;
@@ -109,6 +128,9 @@ export async function createCheckoutSession(user: User, req: CheckoutRequest, or
       },
     ],
     metadata: { userId: user.id, type: 'credit_pack', packId: pack.id },
+    // Buyers get a real Stripe invoice/receipt (useful for co-op and ESA reimbursements).
+    invoice_creation: { enabled: true },
+    integration_identifier: 'quewhat-packs-dhnjwxce',
   });
   if (!session.url) throw new Error('Stripe did not return a checkout URL');
   return session.url;
@@ -116,7 +138,8 @@ export async function createCheckoutSession(user: User, req: CheckoutRequest, or
 
 /** Stripe-hosted page where a customer updates their card or cancels. */
 export async function createBillingPortalSession(user: User, origin: string): Promise<string> {
-  if (!user.stripeCustomerId) throw new Error('No billing account yet — subscribe or buy credits first');
+  if (!user.stripeCustomerId)
+    throw new Error('No billing account yet — subscribe or buy credits first');
   const stripe = await getStripe();
   const base = (process.env.APP_URL || origin).replace(/\/$/, '');
   const session = await stripe.billingPortal.sessions.create({
@@ -127,7 +150,10 @@ export async function createBillingPortalSession(user: User, origin: string): Pr
 }
 
 /** Verify the signature and parse a webhook payload. Throws on a bad signature. */
-export async function verifyWebhook(rawBody: string, signature: string | null): Promise<Stripe.Event> {
+export async function verifyWebhook(
+  rawBody: string,
+  signature: string | null,
+): Promise<Stripe.Event> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) throw new Error('STRIPE_WEBHOOK_SECRET is not set');
   if (!signature) throw new Error('Missing Stripe-Signature header');
@@ -147,6 +173,22 @@ async function markProcessed(eventId: string): Promise<void> {
     value: ids.includes(eventId) ? ids : [eventId, ...ids].slice(0, 5000),
     result: undefined,
   }));
+}
+
+/** Surface a Stripe risk/system event in the admin audit log. */
+async function systemAudit(action: string, targetId: string, details: string): Promise<void> {
+  try {
+    await logAuditEvent({
+      adminId: 'stripe-webhook',
+      adminEmail: 'system',
+      action,
+      targetType: 'monetization',
+      targetId,
+      details,
+    });
+  } catch (err) {
+    log.warn('Could not write audit log entry:', err);
+  }
 }
 
 async function findUserByCustomer(customerId: string | null | undefined): Promise<User | null> {
@@ -211,7 +253,8 @@ async function applyEvent(event: Stripe.Event): Promise<string> {
     case 'invoice.paid': {
       const inv = event.data.object as Stripe.Invoice & { billing_reason?: string };
       // The first invoice is covered by checkout.session.completed.
-      if (inv.billing_reason !== 'subscription_cycle') return `invoice ${inv.id} (${inv.billing_reason}) skipped`;
+      if (inv.billing_reason !== 'subscription_cycle')
+        return `invoice ${inv.id} (${inv.billing_reason}) skipped`;
       const user = await findUserByCustomer(idOf(inv.customer as string | { id: string } | null));
       if (!user) return `invoice ${inv.id}: no matching user`;
       const plan = PRICING_PLANS.find((p) => p.tier === user.tier);
@@ -252,6 +295,72 @@ async function applyEvent(event: Stripe.Event): Promise<string> {
       await updateUser(user.id, { tier: 'free', monthlyAllowance: free?.monthlyTokens ?? 0 });
       log.info(`Subscription ${sub.id} ended; ${user.email} moved to free`);
       return `downgraded ${user.id}`;
+    }
+
+    case 'checkout.session.async_payment_failed': {
+      const s = event.data.object as Stripe.Checkout.Session;
+      log.warn(
+        `Async payment failed for session ${s.id} (user ${s.metadata?.userId ?? 'unknown'})`,
+      );
+      await systemAudit(
+        'stripe.async_payment_failed',
+        s.id,
+        `Checkout session ${s.id} payment failed after completion`,
+      );
+      return `async payment failed for ${s.id}`;
+    }
+
+    case 'charge.refunded': {
+      const charge = event.data.object as Stripe.Charge;
+      const user = await findUserByCustomer(idOf(charge.customer));
+      // Resolve the charge back to its Checkout session (our transaction reference).
+      let marked = 'no matching transaction';
+      const pi = idOf(charge.payment_intent);
+      if (pi && stripeConfigured()) {
+        try {
+          const stripe = await getStripe();
+          const sessions = await stripe.checkout.sessions.list({ payment_intent: pi, limit: 1 });
+          const sessionId = sessions.data[0]?.id;
+          if (sessionId && (await markTransactionRefunded(sessionId)))
+            marked = `transaction ${sessionId} marked refunded`;
+        } catch (err) {
+          log.warn('Could not resolve refunded charge to a session:', err);
+        }
+      }
+      const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
+      await systemAudit(
+        'stripe.charge_refunded',
+        charge.id,
+        `Refund of $${amount}${user ? ` for ${user.email}` : ''} (charge ${charge.id}); ${marked}. Review token balance.`,
+      );
+      return `refund recorded for ${charge.id}; ${marked}`;
+    }
+
+    case 'charge.dispute.created': {
+      const dispute = event.data.object as Stripe.Dispute;
+      const amount = ((dispute.amount ?? 0) / 100).toFixed(2);
+      log.warn(`Dispute ${dispute.id} opened for charge ${idOf(dispute.charge)} ($${amount})`);
+      await systemAudit(
+        'stripe.dispute_created',
+        dispute.id,
+        `Dispute opened for charge ${idOf(dispute.charge)} ($${amount}, reason: ${dispute.reason}). Respond in the Stripe Dashboard before ${
+          dispute.evidence_details?.due_by
+            ? new Date(dispute.evidence_details.due_by * 1000).toISOString().slice(0, 10)
+            : 'the deadline'
+        }.`,
+      );
+      return `dispute ${dispute.id} logged`;
+    }
+
+    case 'radar.early_fraud_warning.created': {
+      const warning = event.data.object as Stripe.Radar.EarlyFraudWarning;
+      log.warn(`Early fraud warning ${warning.id} for charge ${idOf(warning.charge)}`);
+      await systemAudit(
+        'stripe.early_fraud_warning',
+        warning.id,
+        `Early fraud warning for charge ${idOf(warning.charge)} (${warning.fraud_type}). Consider refunding proactively to avoid a dispute.`,
+      );
+      return `fraud warning ${warning.id} logged`;
     }
 
     default:
