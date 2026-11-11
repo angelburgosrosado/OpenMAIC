@@ -12,6 +12,7 @@
   "home": {
     "slogan": "L’apprentissage génératif en classe interactive multi-agents",
     "homeworkCta": "Bloqué sur les devoirs ? Essaie l’aide aux devoirs →",
+    "quizCta": "Soirée quiz en famille — jouez sur vos téléphones →",
     "greetingWithName": "Bonjour, {{name}}"
   },
   "toolbar": {

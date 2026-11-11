@@ -12,6 +12,7 @@
   "home": {
     "slogan": "Generative Learning in Multi-Agent Interactive Classroom",
     "homeworkCta": "作业卡住了？试试作业助手 →",
+    "quizCta": "家庭问答之夜 — 用手机一起玩 →",
     "greetingWithName": "嗨，{{name}}"
   },
   "toolbar": {

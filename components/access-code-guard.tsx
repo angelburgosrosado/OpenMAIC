@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { AccessCodeModal } from '@/components/access-code-modal';
 import { useSettingsStore } from '@/lib/store/settings';
 
@@ -35,7 +36,10 @@ export function AccessCodeGuard({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const needsAuth = !status.loading && status.enabled && !status.authenticated;
+  // Family phones join a quiz with just the game code (no site password).
+  const pathname = usePathname();
+  const publicPage = pathname === '/join';
+  const needsAuth = !publicPage && !status.loading && status.enabled && !status.authenticated;
 
   return (
     <>

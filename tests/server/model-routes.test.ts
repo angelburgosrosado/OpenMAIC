@@ -380,6 +380,7 @@ describe('model-routes', () => {
         'maic-agent-driver',
         'conversation-title',
         'homework-helper',
+        'quiz-night',
       ]),
     );
   });

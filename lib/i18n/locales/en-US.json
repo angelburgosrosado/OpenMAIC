@@ -12,6 +12,7 @@
   "home": {
     "slogan": "Generative Learning in Multi-Agent Interactive Classroom",
     "homeworkCta": "Stuck on homework? Try the homework helper →",
+    "quizCta": "Family quiz night — play on your phones →",
     "greetingWithName": "Hi, {{name}}"
   },
   "toolbar": {
