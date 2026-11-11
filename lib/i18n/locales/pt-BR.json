@@ -12,6 +12,7 @@
   "home": {
     "slogan": "Aprendizagem Generativa em Sala de Aula Interativa Multi-Agente",
     "homeworkCta": "Travou na lição de casa? Experimente o ajudante de lição →",
+    "quizCta": "Noite de quiz em família — joguem no celular →",
     "greetingWithName": "Olá, {{name}}"
   },
   "toolbar": {

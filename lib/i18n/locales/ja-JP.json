@@ -12,6 +12,7 @@
   "home": {
     "slogan": "マルチエージェント対話型教室で生成的に学ぶ",
     "homeworkCta": "宿題で困っている？宿題ヘルパーを試そう →",
+    "quizCta": "家族クイズナイト — スマホで参加 →",
     "greetingWithName": "こんにちは、{{name}}さん"
   },
   "toolbar": {

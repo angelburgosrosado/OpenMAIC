@@ -70,7 +70,9 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/monetization/plans' ||
     pathname.startsWith('/api/calculator/') ||
     // Stripe calls this server-to-server; it is authenticated by its signature.
-    pathname === '/api/stripe/webhook'
+    pathname === '/api/stripe/webhook' ||
+    // Family phones join a quiz with only the game code; writes need room keys.
+    pathname === '/api/quiz/play'
   ) {
     return NextResponse.next();
   }

@@ -891,13 +891,19 @@ function HomePage() {
           initial={heroEnter({ opacity: 0 })}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mb-8"
+          className="mb-8 flex flex-wrap justify-center gap-3"
         >
           <Link
             href="/homework"
             className="inline-flex items-center min-h-[44px] rounded-full bg-[#1F3B2D] px-5 text-sm font-bold text-[#F7F5EE] shadow-md hover:bg-[#2A4A39] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-[#E0A82E] focus-visible:outline-offset-2"
           >
             {t('home.homeworkCta')}
+          </Link>
+          <Link
+            href="/quiz"
+            className="inline-flex items-center min-h-[44px] rounded-full bg-[#F6D365] px-5 text-sm font-bold text-[#1F3B2D] shadow-md hover:bg-[#F2C94C] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-[#E0A82E] focus-visible:outline-offset-2"
+          >
+            {t('home.quizCta')}
           </Link>
         </motion.div>
 
