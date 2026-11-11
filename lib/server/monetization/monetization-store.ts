@@ -13,6 +13,13 @@ import type { UserTier } from '@/lib/server/auth/types';
 import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 
 const log = createLogger('MonetizationStore');
+/** How a purchase was paid (Stripe in production; simulated in local development). */
+export interface PaymentInfo {
+  paymentMethod: string;
+  referenceId?: string;
+  amountUsd?: number;
+}
+
 /** Postgres when DATABASE_URL is set, else data/monetization/*.json. */
 const PROMO_KEY = 'monetization/promo-codes';
 const TX_KEY = 'monetization/transactions';
@@ -186,6 +193,7 @@ export async function processCheckoutPlan(
   userId: string,
   planId: string,
   billingCycle: 'monthly' | 'yearly' = 'monthly',
+  payment?: PaymentInfo,
 ): Promise<{ success: boolean; plan: PricingPlan; newBalance: number }> {
   const plan = PRICING_PLANS.find((p) => p.id === planId);
   if (!plan) throw new Error(`Plan ${planId} not found`);
@@ -209,12 +217,12 @@ export async function processCheckoutPlan(
     userEmail: user.email,
     type: 'subscription',
     description: `Subscribed to ${plan.name} (${billingCycle} billing)`,
-    amountUsd: price,
+    amountUsd: payment?.amountUsd ?? price,
     tokensAdded: newTokens,
     planTier: plan.tier,
     status: 'completed',
-    paymentMethod: price === 0 ? 'FREE_TIER' : 'CREDIT_CARD_SIMULATED',
-    referenceId: `sub_${nanoid(10)}`,
+    paymentMethod: payment?.paymentMethod ?? (price === 0 ? 'FREE_TIER' : 'CREDIT_CARD_SIMULATED'),
+    referenceId: payment?.referenceId ?? `sub_${nanoid(10)}`,
   });
 
   log.info(`User ${user.email} successfully upgraded to ${plan.name}`);
@@ -228,6 +236,7 @@ export async function processCheckoutPlan(
 export async function processBuyCreditPack(
   userId: string,
   packId: string,
+  payment?: PaymentInfo,
 ): Promise<{ success: boolean; pack: CreditPack; newBalance: number }> {
   const pack = CREDIT_PACKS.find((p) => p.id === packId);
   if (!pack) throw new Error(`Credit pack ${packId} not found`);
@@ -243,12 +252,12 @@ export async function processBuyCreditPack(
     userEmail: user.email,
     type: 'credit_topup',
     description: `Purchased ${pack.name} (+${totalTokens.toLocaleString()} tokens)`,
-    amountUsd: pack.priceUsd,
+    amountUsd: payment?.amountUsd ?? pack.priceUsd,
     tokensAdded: totalTokens,
     planTier: user.tier,
     status: 'completed',
-    paymentMethod: 'CREDIT_CARD_SIMULATED',
-    referenceId: `pack_${nanoid(10)}`,
+    paymentMethod: payment?.paymentMethod ?? 'CREDIT_CARD_SIMULATED',
+    referenceId: payment?.referenceId ?? `pack_${nanoid(10)}`,
   });
 
   return {

@@ -68,7 +68,9 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/health' ||
     pathname.startsWith('/api/auth/') ||
     pathname === '/api/monetization/plans' ||
-    pathname.startsWith('/api/calculator/')
+    pathname.startsWith('/api/calculator/') ||
+    // Stripe calls this server-to-server; it is authenticated by its signature.
+    pathname === '/api/stripe/webhook'
   ) {
     return NextResponse.next();
   }

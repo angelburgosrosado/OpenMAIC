@@ -111,6 +111,12 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return users.find((u) => u.email.toLowerCase() === normalized) || null;
 }
 
+export async function getUserByStripeCustomerId(customerId: string): Promise<User | null> {
+  if (!customerId) return null;
+  const users = await readUsers();
+  return users.find((u) => u.stripeCustomerId === customerId) || null;
+}
+
 export async function getUserByApiKey(apiKey: string): Promise<User | null> {
   if (!apiKey) return null;
   await ensureDefaultAdmin();

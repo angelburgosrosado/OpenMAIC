@@ -64,6 +64,10 @@ export function PricingModal() {
         }),
       });
       const data = await res.json();
+      if (data.success && data.url) {
+        window.location.href = data.url; // Stripe Checkout
+        return;
+      }
       if (data.success) {
         toast.success(data.message || `Upgraded to ${plan.name}!`);
         await refreshUser();
@@ -95,6 +99,10 @@ export function PricingModal() {
         }),
       });
       const data = await res.json();
+      if (data.success && data.url) {
+        window.location.href = data.url; // Stripe Checkout
+        return;
+      }
       if (data.success) {
         toast.success(data.message || `Added ${pack.tokens.toLocaleString()} tokens!`);
         await refreshUser();
@@ -105,6 +113,24 @@ export function PricingModal() {
       toast.error('Network error purchasing tokens');
     } finally {
       setProcessingPackId(null);
+    }
+  };
+
+  const [openingBilling, setOpeningBilling] = useState(false);
+  const handleManageBilling = async () => {
+    setOpeningBilling(true);
+    try {
+      const res = await fetch('/api/monetization/portal', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast.error(data.error || 'Could not open billing');
+    } catch {
+      toast.error('Network error opening billing');
+    } finally {
+      setOpeningBilling(false);
     }
   };
 
@@ -158,6 +184,19 @@ export function PricingModal() {
             Scale your interactive classroom generation with generous monthly token allowances,
             flagship AI models, and HD multimedia rendering.
           </DialogDescription>
+
+          {user && user.tier !== 'free' ? (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleManageBilling}
+                disabled={openingBilling}
+                className="min-h-[36px] px-4 rounded-lg text-xs font-semibold border border-border/60 bg-background hover:bg-muted disabled:opacity-60"
+              >
+                {openingBilling ? 'Opening…' : 'Manage billing & subscription'}
+              </button>
+            </div>
+          ) : null}
 
           {/* Monthly / Annual Toggle */}
           <div className="inline-flex items-center p-1 mt-4 rounded-xl bg-muted/60 border border-border/40 text-xs font-semibold">
