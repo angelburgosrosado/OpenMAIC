@@ -24,7 +24,7 @@ class MockKeyboardEvent {
       code?: string;
       bubbles?: boolean;
       cancelable?: boolean;
-    }
+    },
   ) {
     this.type = type;
     this.key = init?.key || '';
@@ -42,7 +42,11 @@ function setupDOM() {
   dom = parseHTML('<!doctype html><html><body><div id="root"></div></body></html>');
   (global as any).window = dom.window;
   (global as any).document = dom.document;
-  (global as any).navigator = dom.navigator;
+  Object.defineProperty(globalThis, 'navigator', {
+    value: dom.navigator,
+    configurable: true,
+    writable: true,
+  });
   (global as any).KeyboardEvent = MockKeyboardEvent;
   dom.window.KeyboardEvent = MockKeyboardEvent;
   (global as any).HTMLElement = dom.HTMLElement;
@@ -107,7 +111,7 @@ describe('TVPlaybackOSD', () => {
             courseTitle="Introduction to Quantum Mechanics"
             sceneTitle="Schrödinger Equation & Wavefunctions"
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -149,7 +153,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -172,7 +176,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -198,7 +202,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -226,7 +230,7 @@ describe('TVPlaybackOSD', () => {
             onNext={onNext}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -251,7 +255,7 @@ describe('TVPlaybackOSD', () => {
             onNext={onNext}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -282,7 +286,7 @@ describe('TVPlaybackOSD', () => {
             onReplay={onReplay}
             onToggleSubtitles={onToggleSubtitles}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -320,7 +324,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -357,7 +361,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -382,7 +386,7 @@ describe('TVPlaybackOSD', () => {
             onNext={vi.fn()}
             onReplay={vi.fn()}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -397,14 +401,14 @@ describe('TVPlaybackOSD', () => {
       const el = container.querySelector(`[data-tv-focusable-id="${id}"]`);
       if (el) {
         el.getBoundingClientRect = () =>
-        ({
-          left: 150 * index,
-          top: 200,
-          width: 100,
-          height: 60,
-          right: 150 * index + 100,
-          bottom: 260,
-        } as any);
+          ({
+            left: 150 * index,
+            top: 200,
+            width: 100,
+            height: 60,
+            right: 150 * index + 100,
+            bottom: 260,
+          }) as any;
       }
     });
 
