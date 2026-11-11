@@ -1420,7 +1420,14 @@ function HomePage() {
         <a href="https://github.com/THU-MAIC/OpenMAIC" className="underline" target="_blank" rel="noreferrer">
           OpenMAIC
         </a>{' '}
-        project
+        project ·{' '}
+        <Link href="/privacy" className="underline">
+          Privacy
+        </Link>{' '}
+        ·{' '}
+        <Link href="/terms" className="underline">
+          Terms
+        </Link>
       </div>
     </div>
   );

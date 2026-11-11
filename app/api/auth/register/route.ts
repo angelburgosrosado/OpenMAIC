@@ -4,6 +4,7 @@ import { createUser, stripSensitive } from '@/lib/server/auth/user-store';
 import { setSessionCookie } from '@/lib/server/auth/session';
 import { getAppSettings } from '@/lib/server/admin/admin-store';
 import { redeemPromoCode } from '@/lib/server/monetization/monetization-store';
+import { LEGAL_VERSION } from '@/lib/legal';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { email, password, name, promoCode } = body;
+    const { email, password, name, promoCode, adultConfirmed, acceptTerms } = body;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return apiError('INVALID_REQUEST', 400, 'A valid email address is required.');
@@ -25,6 +26,23 @@ export async function POST(req: NextRequest) {
 
     if (!password || typeof password !== 'string' || password.length < 6) {
       return apiError('INVALID_REQUEST', 400, 'Password must be at least 6 characters long.');
+    }
+
+    // Accounts are for adults only (parents, guardians, teachers, adult learners).
+    // Children use QuéWhat through a grown-up's account and never sign up themselves.
+    if (adultConfirmed !== true) {
+      return apiError(
+        'INVALID_REQUEST',
+        400,
+        'Accounts are for adults 18 or older. Kids can learn with a parent or guardian’s account.',
+      );
+    }
+    if (acceptTerms !== true) {
+      return apiError(
+        'INVALID_REQUEST',
+        400,
+        'Please accept the Terms of Service and Privacy Policy.',
+      );
     }
 
     const user = await createUser(
@@ -35,6 +53,7 @@ export async function POST(req: NextRequest) {
       },
       {
         initialTokens: settings.defaultTokensOnSignup,
+        termsVersion: LEGAL_VERSION,
       },
     );
 
@@ -52,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     return apiSuccess({
       user: stripSensitive(user),
-      message: 'Registration successful! Welcome to OpenMAIC.',
+      message: 'Registration successful! Welcome to QuéWhat.',
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Registration failed';

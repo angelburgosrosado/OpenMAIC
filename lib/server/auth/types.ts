@@ -55,6 +55,9 @@ export interface User {
   totalTokensConsumed: number;
   apiKey?: string;
   stripeCustomerId?: string;
+  /** When the account holder confirmed they are an adult (18+) and accepted the terms. */
+  termsAcceptedAt?: string;
+  termsVersion?: string;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;

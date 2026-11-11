@@ -131,6 +131,7 @@ export async function createUser(
     tier?: UserTier;
     initialTokens?: number;
     avatar?: string;
+    termsVersion?: string;
   },
 ): Promise<User> {
   return mutateUsers((users) => {
@@ -162,6 +163,7 @@ export async function createUser(
       tokensUsedThisMonth: 0,
       totalTokensConsumed: 0,
       apiKey: generateApiKey(),
+      ...(options?.termsVersion ? { termsAcceptedAt: now, termsVersion: options.termsVersion } : {}),
       createdAt: now,
       updatedAt: now,
     };
