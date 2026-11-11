@@ -17,7 +17,9 @@ describe('isTVEnvironment', () => {
   });
 
   it('detects common Smart TV platforms by UA keywords', () => {
-    expect(isTVEnvironment('', 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36')).toBe(true);
+    expect(isTVEnvironment('', 'Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36')).toBe(
+      true,
+    );
     expect(isTVEnvironment('', 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36')).toBe(true);
     expect(isTVEnvironment('', 'AppleTV11,1/11.1')).toBe(true);
     expect(isTVEnvironment('', 'Roku/DVP-9.10 (519.10E04111A)')).toBe(true);

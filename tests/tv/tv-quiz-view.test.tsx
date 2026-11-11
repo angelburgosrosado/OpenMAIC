@@ -40,7 +40,7 @@ class MockKeyboardEvent {
       code?: string;
       bubbles?: boolean;
       cancelable?: boolean;
-    }
+    },
   ) {
     this.type = type;
     this.key = init?.key || '';
@@ -58,7 +58,11 @@ function setupDOM() {
   dom = parseHTML('<!doctype html><html><body><div id="root"></div></body></html>');
   (global as any).window = dom.window;
   (global as any).document = dom.document;
-  (global as any).navigator = dom.navigator;
+  Object.defineProperty(globalThis, 'navigator', {
+    value: dom.navigator,
+    configurable: true,
+    writable: true,
+  });
   (global as any).KeyboardEvent = MockKeyboardEvent;
   dom.window.KeyboardEvent = MockKeyboardEvent;
   (global as any).HTMLElement = dom.HTMLElement;
@@ -124,7 +128,8 @@ const mockQuestions: QuizQuestion[] = [
       { value: 'D', label: 'DNA replication and transcription' },
     ],
     answer: ['A'],
-    analysis: 'Mitochondria generate most of the chemical energy needed to power the cell’s biochemical reactions (ATP).',
+    analysis:
+      'Mitochondria generate most of the chemical energy needed to power the cell’s biochemical reactions (ATP).',
     points: 1,
   },
   {
@@ -159,12 +164,8 @@ describe('TVQuizView', () => {
     act(() => {
       root.render(
         <TVNavigationProvider forceTVMode={true}>
-          <TVQuizView
-            questions={mockQuestions}
-            sceneId="scene-quiz-1"
-            stageId="stage-1"
-          />
-        </TVNavigationProvider>
+          <TVQuizView questions={mockQuestions} sceneId="scene-quiz-1" stageId="stage-1" />
+        </TVNavigationProvider>,
       );
     });
 
@@ -204,12 +205,8 @@ describe('TVQuizView', () => {
     act(() => {
       root.render(
         <TVNavigationProvider forceTVMode={true}>
-          <TVQuizView
-            questions={mockQuestions}
-            sceneId="scene-quiz-1"
-            stageId="stage-1"
-          />
-        </TVNavigationProvider>
+          <TVQuizView questions={mockQuestions} sceneId="scene-quiz-1" stageId="stage-1" />
+        </TVNavigationProvider>,
       );
     });
 
@@ -221,12 +218,8 @@ describe('TVQuizView', () => {
     act(() => {
       root.render(
         <TVNavigationProvider forceTVMode={true} debounceMs={0}>
-          <TVQuizView
-            questions={mockQuestions}
-            sceneId="scene-quiz-1"
-            stageId="stage-1"
-          />
-        </TVNavigationProvider>
+          <TVQuizView questions={mockQuestions} sceneId="scene-quiz-1" stageId="stage-1" />
+        </TVNavigationProvider>,
       );
     });
 
@@ -266,12 +259,8 @@ describe('TVQuizView', () => {
     act(() => {
       root.render(
         <TVNavigationProvider forceTVMode={true} debounceMs={0}>
-          <TVQuizView
-            questions={mockQuestions}
-            sceneId="scene-quiz-1"
-            stageId="stage-1"
-          />
-        </TVNavigationProvider>
+          <TVQuizView questions={mockQuestions} sceneId="scene-quiz-1" stageId="stage-1" />
+        </TVNavigationProvider>,
       );
     });
 
@@ -309,7 +298,7 @@ describe('TVQuizView', () => {
             stageId="stage-1"
             onComplete={onComplete}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -320,7 +309,9 @@ describe('TVQuizView', () => {
     });
 
     // Submit answer
-    const submitBtn = container.querySelector('[data-tv-focusable-id="tv-quiz-submit"]') as HTMLElement;
+    const submitBtn = container.querySelector(
+      '[data-tv-focusable-id="tv-quiz-submit"]',
+    ) as HTMLElement;
     act(() => {
       dispatchClick(submitBtn);
     });
@@ -348,7 +339,7 @@ describe('TVQuizView', () => {
             stageId="stage-1"
             onComplete={onComplete}
           />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -357,7 +348,9 @@ describe('TVQuizView', () => {
     act(() => {
       dispatchClick(opt0);
     });
-    const submitBtn1 = container.querySelector('[data-tv-focusable-id="tv-quiz-submit"]') as HTMLElement;
+    const submitBtn1 = container.querySelector(
+      '[data-tv-focusable-id="tv-quiz-submit"]',
+    ) as HTMLElement;
     act(() => {
       dispatchClick(submitBtn1);
     });
@@ -383,7 +376,9 @@ describe('TVQuizView', () => {
     });
 
     // Submit Q2
-    const submitBtn2 = container.querySelector('[data-tv-focusable-id="tv-quiz-submit"]') as HTMLElement;
+    const submitBtn2 = container.querySelector(
+      '[data-tv-focusable-id="tv-quiz-submit"]',
+    ) as HTMLElement;
     act(() => {
       dispatchClick(submitBtn2);
     });
@@ -391,7 +386,9 @@ describe('TVQuizView', () => {
     expect(container.textContent).toContain('Mars appears reddish');
 
     // Click Continue on final question -> onComplete called
-    const nextBtn2 = container.querySelector('[data-tv-focusable-id="tv-quiz-next"]') as HTMLElement;
+    const nextBtn2 = container.querySelector(
+      '[data-tv-focusable-id="tv-quiz-next"]',
+    ) as HTMLElement;
     act(() => {
       dispatchClick(nextBtn2);
     });
@@ -426,7 +423,7 @@ describe('SceneRenderer TV mode integration', () => {
       root.render(
         <TVNavigationProvider forceTVMode={true}>
           <SceneRenderer scene={quizScene} mode="playback" />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -438,7 +435,7 @@ describe('SceneRenderer TV mode integration', () => {
       root.render(
         <TVNavigationProvider forceTVMode={false}>
           <SceneRenderer scene={quizScene} mode="playback" />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 

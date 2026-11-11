@@ -2,10 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React, { act } from 'react';
 import ReactDOM from 'react-dom/client';
 import { parseHTML } from 'linkedom';
-import {
-  TVNavigationProvider,
-  useTVNavigation,
-} from '@/components/tv/TVNavigationProvider';
+import { TVNavigationProvider, useTVNavigation } from '@/components/tv/TVNavigationProvider';
 import { TVFocusable } from '@/components/tv/TVFocusable';
 
 // Setup simulated DOM environment using linkedom
@@ -28,7 +25,7 @@ class MockKeyboardEvent {
       code?: string;
       bubbles?: boolean;
       cancelable?: boolean;
-    }
+    },
   ) {
     this.type = type;
     this.key = init?.key || '';
@@ -46,7 +43,11 @@ function setupDOM() {
   dom = parseHTML('<!doctype html><html><body><div id="root"></div></body></html>');
   (global as any).window = dom.window;
   (global as any).document = dom.document;
-  (global as any).navigator = dom.navigator;
+  Object.defineProperty(globalThis, 'navigator', {
+    value: dom.navigator,
+    configurable: true,
+    writable: true,
+  });
   (global as any).KeyboardEvent = MockKeyboardEvent;
   dom.window.KeyboardEvent = MockKeyboardEvent;
   (global as any).HTMLElement = dom.HTMLElement;
@@ -103,7 +104,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
       root.render(
         <TVNavigationProvider forceTVMode={true} defaultFocusId="btn-1">
           <TestConsumer />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -124,19 +125,13 @@ describe('TVNavigationProvider and TVFocusable', () => {
           >
             <span>Left Button</span>
           </TVFocusable>
-          <TVFocusable
-            id="item-right"
-            rect={{ left: 400, top: 100, width: 200, height: 100 }}
-          >
+          <TVFocusable id="item-right" rect={{ left: 400, top: 100, width: 200, height: 100 }}>
             <span>Right Button</span>
           </TVFocusable>
-          <TVFocusable
-            id="item-down"
-            rect={{ left: 100, top: 300, width: 200, height: 100 }}
-          >
+          <TVFocusable id="item-down" rect={{ left: 100, top: 300, width: 200, height: 100 }}>
             <span>Down Button</span>
           </TVFocusable>
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -147,7 +142,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
     // item-left has autoFocus -> initial focus
     expect(itemLeft?.getAttribute('data-focused')).toBe('true');
     expect(itemLeft?.className).toContain(
-      'ring-4 ring-cyan-400 dark:ring-cyan-300 scale-105 shadow-2xl transition-all duration-200'
+      'ring-4 ring-cyan-400 dark:ring-cyan-300 scale-105 shadow-2xl transition-all duration-200',
     );
     expect(itemRight?.getAttribute('data-focused')).toBe('false');
 
@@ -159,7 +154,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
 
     expect(itemRight?.getAttribute('data-focused')).toBe('true');
     expect(itemRight?.className).toContain(
-      'ring-4 ring-cyan-400 dark:ring-cyan-300 scale-105 shadow-2xl transition-all duration-200'
+      'ring-4 ring-cyan-400 dark:ring-cyan-300 scale-105 shadow-2xl transition-all duration-200',
     );
     expect(itemLeft?.getAttribute('data-focused')).toBe('false');
 
@@ -200,7 +195,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
           >
             Item B
           </TVFocusable>
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -238,7 +233,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
           >
             Button
           </TVFocusable>
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -276,7 +271,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
       root.render(
         <TVNavigationProvider forceTVMode={true} osdTimeoutMs={3000}>
           <Consumer />
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 
@@ -320,10 +315,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
               First
             </TVFocusable>
           )}
-          <TVFocusable
-            id="second"
-            rect={{ left: 400, top: 100, width: 200, height: 100 }}
-          >
+          <TVFocusable id="second" rect={{ left: 400, top: 100, width: 200, height: 100 }}>
             Second
           </TVFocusable>
         </TVNavigationProvider>
@@ -362,7 +354,7 @@ describe('TVNavigationProvider and TVFocusable', () => {
           >
             Standard Button
           </TVFocusable>
-        </TVNavigationProvider>
+        </TVNavigationProvider>,
       );
     });
 

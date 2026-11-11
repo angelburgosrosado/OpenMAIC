@@ -1207,6 +1207,7 @@ describe('DSL course-tool wiring', () => {
         'duplicate_scene',
         'import_pptx',
         'generate_image',
+        'generate_infographic',
         'generate_tts',
         'edit_deck',
         'read_stage',
