@@ -11,6 +11,7 @@
   },
   "home": {
     "slogan": "多智能體互動課室中的生成式學習",
+    "homeworkCta": "作業卡住了？試試作業助手 →",
     "greetingWithName": "嗨，{{name}}"
   },
   "toolbar": {

@@ -11,6 +11,7 @@
   },
   "home": {
     "slogan": "Generatives Lernen im interaktiven Lernraum mit mehreren KI-Agenten",
+    "homeworkCta": "Hängst du bei den Hausaufgaben? Probier den Hausaufgabenhelfer →",
     "greetingWithName": "Hallo, {{name}}"
   },
   "toolbar": {

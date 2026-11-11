@@ -11,6 +11,7 @@
   },
   "home": {
     "slogan": "멀티 에이전트 인터랙티브 교실에서 펼치는 생성형 학습",
+    "homeworkCta": "숙제가 막혔나요? 숙제 도우미를 써 보세요 →",
     "greetingWithName": "안녕하세요, {{name}}!"
   },
   "toolbar": {

@@ -881,10 +881,25 @@ function HomePage() {
           initial={heroEnter({ opacity: 0 })}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="text-sm text-muted-foreground/60 mb-8"
+          className="text-sm text-muted-foreground/60 mb-3"
         >
           {t('home.slogan')}
         </motion.p>
+
+        {/* ── Homework helper entry ── */}
+        <motion.div
+          initial={heroEnter({ opacity: 0 })}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mb-8"
+        >
+          <Link
+            href="/homework"
+            className="inline-flex items-center min-h-[44px] rounded-full bg-[#1F3B2D] px-5 text-sm font-bold text-[#F7F5EE] shadow-md hover:bg-[#2A4A39] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-[#E0A82E] focus-visible:outline-offset-2"
+          >
+            {t('home.homeworkCta')}
+          </Link>
+        </motion.div>
 
         {/* ── Unified input area ── */}
         <motion.div
