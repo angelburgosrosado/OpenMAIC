@@ -27,7 +27,7 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.logo {
+.paper .logo {
   font-family: 'Cabin Sketch', cursive;
   font-weight: 700;
   font-size: 30px;
@@ -39,7 +39,7 @@
   gap: 16px;
   font-weight: 800;
 }
-.nav a {
+.paper .nav a {
   color: #f6d365;
 }
 .paper h1 {
