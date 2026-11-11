@@ -379,6 +379,7 @@ describe('model-routes', () => {
         'maic-agent',
         'maic-agent-driver',
         'conversation-title',
+        'homework-helper',
       ]),
     );
   });

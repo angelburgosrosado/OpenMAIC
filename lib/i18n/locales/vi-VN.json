@@ -11,6 +11,7 @@
   },
   "home": {
     "slogan": "Học tập sinh tạo trong lớp học tương tác đa tác nhân",
+    "homeworkCta": "Bí bài tập về nhà? Thử trợ lý bài tập →",
     "greetingWithName": "Chào {{name}}"
   },
   "toolbar": {
