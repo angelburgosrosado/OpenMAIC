@@ -2,13 +2,7 @@ import { nanoid } from 'nanoid';
 import { createLogger } from '@/lib/logger';
 import { getUserById, updateUser, adjustUserTokenBalance } from '@/lib/server/auth/user-store';
 import { PRICING_PLANS, CREDIT_PACKS } from './plans';
-import type {
-  PromoCode,
-  Transaction,
-  RevenueMetrics,
-  PricingPlan,
-  CreditPack,
-} from './types';
+import type { PromoCode, Transaction, RevenueMetrics, PricingPlan, CreditPack } from './types';
 import type { UserTier } from '@/lib/server/auth/types';
 import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 
@@ -75,7 +69,9 @@ export async function listPromoCodes(): Promise<PromoCode[]> {
   return readDoc<PromoCode[]>(PROMO_KEY, seedPromoCodes());
 }
 
-export async function createPromoCode(input: Omit<PromoCode, 'usedCount' | 'createdAt'>): Promise<PromoCode> {
+export async function createPromoCode(
+  input: Omit<PromoCode, 'usedCount' | 'createdAt'>,
+): Promise<PromoCode> {
   return mutatePromoCodes((codes) => {
     const upperCode = input.code.toUpperCase().trim();
     if (codes.some((c) => c.code === upperCode)) {
@@ -117,6 +113,15 @@ export async function recordTransaction(
     };
     all.unshift(newTx); // most recent first
     return { value: all, result: newTx };
+  });
+}
+
+/** Mark the transaction recorded for a Stripe reference (session/invoice id) as refunded. */
+export async function markTransactionRefunded(referenceId: string): Promise<Transaction | null> {
+  return updateDoc<Transaction[], Transaction | null>(TX_KEY, [], (all) => {
+    const tx = all.find((t) => t.referenceId === referenceId && t.status === 'completed');
+    if (tx) tx.status = 'refunded';
+    return { value: all, result: tx ?? null };
   });
 }
 
@@ -268,10 +273,7 @@ export async function processBuyCreditPack(
 }
 
 export async function getRevenueMetrics(): Promise<RevenueMetrics> {
-  const [txs, allCodes] = await Promise.all([
-    listTransactions(),
-    listPromoCodes(),
-  ]);
+  const [txs, allCodes] = await Promise.all([listTransactions(), listPromoCodes()]);
 
   let totalRevenue = 0;
   let tokensDistributed = 0;

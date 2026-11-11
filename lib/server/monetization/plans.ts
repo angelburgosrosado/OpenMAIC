@@ -5,14 +5,18 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'plan_free',
     name: 'Free Starter',
     tier: 'free',
-    description: 'Perfect for learning, personal experimentation, and basic interactive course generation.',
+    description:
+      'Perfect for learning, personal experimentation, and basic interactive course generation.',
     priceMonthly: 0,
     priceYearly: 0,
     monthlyTokens: 250_000,
     badge: 'Free Forever',
     features: [
       { name: '250,000 Monthly Tokens', included: true },
-      { name: 'Fast standard models (GPT-4o mini, Claude 3.5 Haiku, Gemini Flash)', included: true },
+      {
+        name: 'Fast standard models (GPT-4o mini, Claude 3.5 Haiku, Gemini Flash)',
+        included: true,
+      },
       { name: 'Up to 3 interactive courses / day', included: true },
       { name: 'Standard voice narration (Edge TTS)', included: true },
       { name: '10 AI slide illustrations / month', included: true },
@@ -36,7 +40,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'plan_pro',
     name: 'Creator Pro',
     tier: 'pro',
-    description: 'Designed for educators, course creators, and power users creating rich multimedia learning.',
+    description:
+      'Designed for educators, course creators, and power users creating rich multimedia learning.',
     priceMonthly: 29,
     priceYearly: 279, // ~$23.25/mo
     monthlyTokens: 3_000_000,
@@ -44,7 +49,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     isPopular: true,
     features: [
       { name: '3,000,000 Monthly Tokens', included: true, highlight: true },
-      { name: 'Flagship reasoning models (GPT-4o, Claude 3.7 Sonnet, Gemini 2.5 Pro)', included: true },
+      {
+        name: 'Flagship reasoning models (GPT-4o, Claude 3.7 Sonnet, Gemini 2.5 Pro)',
+        included: true,
+      },
       { name: 'Unlimited interactive courses', included: true },
       { name: 'Premium HD Voices (ElevenLabs, Azure Neural, Minimax)', included: true },
       { name: '100 AI illustrations & diagrams / month (Flux Pro, Ideogram)', included: true },
@@ -68,7 +76,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'plan_enterprise',
     name: 'Enterprise Studio',
     tier: 'enterprise',
-    description: 'For institutions, teams, and platforms demanding high throughput, SLA, and custom models.',
+    description:
+      'For institutions, teams, and platforms demanding high throughput, SLA, and custom models.',
     priceMonthly: 99,
     priceYearly: 950, // ~$79.16/mo
     monthlyTokens: 15_000_000,
