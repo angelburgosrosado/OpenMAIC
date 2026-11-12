@@ -8,8 +8,12 @@
  */
 
 import { randomBytes } from 'crypto';
-import { readDoc, updateDoc } from '@/lib/server/app-store/json-store';
+import { deleteDoc, listDocKeys, readDoc, updateDoc } from '@/lib/server/app-store/json-store';
 import { bi, extractJson, type Bi, LEVELS, type LevelId } from '@/lib/homework/lesson';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('QuizRoom');
+const ROOM_PREFIX = 'quiz/rooms/';
 
 export interface QuizQuestion {
   q: Bi;
@@ -361,7 +365,20 @@ export async function publicState(
   now = Date.now(),
 ): Promise<PublicQuizState> {
   const code = normalizeCode(codeIn);
-  let room = live(await readDoc<QuizRoom | null>(key(code), null), now);
+  const stored = await readDoc<QuizRoom | null>(key(code), null);
+  if (stored && stored.expiresAt <= now) {
+    // publicState is polled continuously by the host TV and every player's
+    // phone, so this opportunistically purges most expired rooms (nicknames,
+    // answers, scores) within moments of expiry. sweepExpiredRooms (run on a
+    // schedule) catches any room nobody polls again. Best-effort: a failed
+    // delete here must never block the 404 the caller is about to get.
+    try {
+      await deleteDoc(key(code));
+    } catch (err) {
+      log.warn(`Failed to delete expired quiz room ${code}:`, err);
+    }
+  }
+  let room = live(stored, now);
   if (room.phase === 'question' && room.questionStartedAt != null) {
     const shouldClose =
       now >= room.questionStartedAt + room.durationSec * 1000 + GRACE_MS || allAnswered(room);
@@ -406,4 +423,25 @@ export async function publicState(
         }
       : null,
   };
+}
+
+/**
+ * Delete every quiz room past its `expiresAt`. publicState's opportunistic
+ * delete handles rooms that are still being polled; this backstops rooms
+ * nobody checks on again (a host who closes the tab, a game nobody joined),
+ * so expired players' nicknames, answers and scores don't just sit in
+ * storage indefinitely. Meant to run on a schedule (see the quiz-cleanup
+ * cron route). Returns the number of rooms deleted.
+ */
+export async function sweepExpiredRooms(now = Date.now()): Promise<number> {
+  const keys = await listDocKeys(ROOM_PREFIX);
+  let deleted = 0;
+  for (const k of keys) {
+    const room = await readDoc<QuizRoom | null>(k, null);
+    if (room && room.expiresAt <= now) {
+      await deleteDoc(k);
+      deleted++;
+    }
+  }
+  return deleted;
 }

@@ -207,6 +207,42 @@ export async function updateDoc<T, R>(
   });
 }
 
+/** Delete a document. No-op if it doesn't exist. */
+export async function deleteDoc(key: string): Promise<void> {
+  assertKey(key);
+  if (!usingDatabase()) {
+    await fs.rm(docFile(key), { force: true });
+    return;
+  }
+  const p = await getPool();
+  await p.query('DELETE FROM app_documents WHERE key = $1', [key]);
+}
+
+/**
+ * List document keys under a prefix (e.g. `quiz/rooms/`). Used by cleanup
+ * sweeps that need to find documents without already knowing their keys.
+ */
+export async function listDocKeys(prefix: string): Promise<string[]> {
+  assertKey(`${prefix}x`); // validate the prefix shape against the same key rules
+  if (!usingDatabase()) {
+    const dir = path.join(fileRoot(), prefix);
+    let entries: string[];
+    try {
+      entries = await fs.readdir(dir);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw err;
+    }
+    return entries.filter((f) => f.endsWith('.json')).map((f) => `${prefix}${f.slice(0, -5)}`);
+  }
+  const p = await getPool();
+  const { rows } = await p.query<{ key: string }>(
+    'SELECT key FROM app_documents WHERE key LIKE $1',
+    [`${prefix}%`],
+  );
+  return rows.map((r) => r.key);
+}
+
 /** Append one entry to a log stream. */
 export async function appendLog(stream: string, data: unknown): Promise<void> {
   assertKey(stream);
