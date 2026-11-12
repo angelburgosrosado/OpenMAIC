@@ -2027,6 +2027,13 @@
     "placeholder": "Access code",
     "error": "Invalid access code. Please try again."
   },
+  "legal": {
+    "updatedTitle": "We've updated our Privacy Policy",
+    "updatedBody": "We've made some updates to our Terms of Service and Privacy Policy. Please take a moment to review the changes.",
+    "reviewPrivacy": "Review Privacy Policy",
+    "reviewTerms": "Review Terms of Service",
+    "accept": "Got it"
+  },
   "workbench": {
     "tool": {
       "label": {

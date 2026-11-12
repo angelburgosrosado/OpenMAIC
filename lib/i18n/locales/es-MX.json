@@ -2027,6 +2027,13 @@
     "launchPlaceholder": "Describe la experiencia de aprendizaje que quieres crear",
     "launchSend": "Iniciar construcción"
   },
+  "legal": {
+    "updatedTitle": "Actualizamos nuestra Política de privacidad",
+    "updatedBody": "Hicimos algunos cambios en nuestros Términos de servicio y Política de privacidad. Por favor, tómate un momento para revisarlos.",
+    "reviewPrivacy": "Ver Política de privacidad",
+    "reviewTerms": "Ver Términos de servicio",
+    "accept": "Entendido"
+  },
   "workbench": {
     "tool": {
       "label": {
