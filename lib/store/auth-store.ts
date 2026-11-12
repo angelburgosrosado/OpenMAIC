@@ -15,15 +15,19 @@ interface AuthState {
   onboardingOpen: boolean;
   pricingModalOpen: boolean;
   calculatorModalOpen: boolean;
+  /** True once per sign-in when the account hasn't accepted the current LEGAL_VERSION yet. */
+  termsNoticeOpen: boolean;
 
   // Modal controls
   setAuthModalOpen: (open: boolean, tab?: 'signin' | 'signup') => void;
   setOnboardingOpen: (open: boolean) => void;
   setPricingModalOpen: (open: boolean) => void;
   setCalculatorModalOpen: (open: boolean) => void;
+  setTermsNoticeOpen: (open: boolean) => void;
 
   // Actions
   checkSession: () => Promise<void>;
+  acceptUpdatedTerms: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (
     email: string,
@@ -47,6 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   onboardingOpen: false,
   pricingModalOpen: false,
   calculatorModalOpen: false,
+  termsNoticeOpen: false,
 
   setAuthModalOpen: (open, tab = 'signin') => {
     set({ authModalOpen: open, authModalTab: tab });
@@ -54,6 +59,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setOnboardingOpen: (open) => set({ onboardingOpen: open }),
   setPricingModalOpen: (open) => set({ pricingModalOpen: open }),
   setCalculatorModalOpen: (open) => set({ calculatorModalOpen: open }),
+  setTermsNoticeOpen: (open) => set({ termsNoticeOpen: open }),
 
   checkSession: async () => {
     try {
@@ -66,6 +72,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           plan: data.plan || null,
           authenticated: true,
           loading: false,
+          // Only flip this to true, never back to false here: a dismissed
+          // notice (termsNoticeOpen set false by the modal) must stay closed
+          // for the rest of the session rather than reopening on the next
+          // poll/focus-triggered checkSession call.
+          ...(data.needsTermsReconsent ? { termsNoticeOpen: true } : {}),
         });
         // Sync nickname & avatar to user profile store
         const profileStore = useUserProfileStore.getState();
@@ -80,6 +91,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch {
       set({ user: null, plan: null, authenticated: false, loading: false });
+    }
+  },
+
+  acceptUpdatedTerms: async () => {
+    try {
+      const res = await fetch('/api/auth/accept-terms', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.user) {
+        set({ user: data.user, termsNoticeOpen: false });
+      }
+    } catch {
+      // best-effort; the notice stays open and the person can retry, or it
+      // reappears next session since the server-side version is unchanged
     }
   },
 
