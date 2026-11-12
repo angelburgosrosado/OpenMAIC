@@ -82,10 +82,19 @@ function mediaServingUrl(baseUrl: string, classroomId: string, subPath: string):
 // Image / Video generation
 // ---------------------------------------------------------------------------
 
+/** One successfully generated media file, reported as it completes. */
+export type MediaGenerated =
+  | { type: 'image' }
+  | { type: 'video'; seconds: number };
+
 export async function generateMediaForClassroom(
   outlines: SceneOutline[],
   classroomId: string,
   baseUrl: string,
+  // Optional so every existing caller (and test) that doesn't pass it is
+  // unaffected -- this is purely an additional tap for plan-usage metering
+  // (see entitlements.ts), not part of the function's actual contract.
+  onMediaGenerated?: (generated: MediaGenerated) => void,
 ): Promise<Record<string, string>> {
   const mediaDir = path.join(CLASSROOMS_DIR, classroomId, 'media');
   await ensureDir(mediaDir);
@@ -154,6 +163,7 @@ export async function generateMediaForClassroom(
         await fs.writeFile(path.join(mediaDir, filename), buf);
         mediaMap[req.elementId] = mediaServingUrl(baseUrl, classroomId, `media/${filename}`);
         log.info(`Generated image: ${filename}`);
+        onMediaGenerated?.({ type: 'image' });
       } catch (err) {
         log.warn(`Image generation failed for ${req.elementId}:`, err);
       }
@@ -193,6 +203,7 @@ export async function generateMediaForClassroom(
         await fs.writeFile(path.join(mediaDir, filename), buf);
         mediaMap[req.elementId] = mediaServingUrl(baseUrl, classroomId, `media/${filename}`);
         log.info(`Generated video: ${filename}`);
+        onMediaGenerated?.({ type: 'video', seconds: normalized.duration ?? 5 });
       } catch (err) {
         log.warn(`Video generation failed for ${req.elementId}:`, err);
       }

@@ -10,6 +10,7 @@ import { documentArtifactToParsedPdfContent, extractDocument } from '@/lib/docum
 import { createLogger } from '@/lib/logger';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { validateUrlForSSRF } from '@/lib/server/ssrf-guard';
+import { checkPdfPageLimit, resolveEntitlementKey } from '@/lib/server/monetization/entitlements';
 const log = createLogger('Parse PDF');
 
 export async function POST(req: NextRequest) {
@@ -81,6 +82,17 @@ export async function POST(req: NextRequest) {
         fileSize: pdfFile.size,
       },
     };
+
+    const pageCount = resultWithMetadata.metadata?.pageCount ?? 0;
+    const entitlement = await resolveEntitlementKey(req);
+    const pageCheck = checkPdfPageLimit(entitlement, pageCount);
+    if (!pageCheck.allowed) {
+      return apiError(
+        'RATE_LIMITED',
+        429,
+        `PDF has ${pageCount} pages, which exceeds your plan's limit of ${pageCheck.limit} pages`,
+      );
+    }
 
     return apiSuccess({ data: resultWithMetadata });
   } catch (error) {

@@ -31,6 +31,7 @@ import {
   generateMediaForClassroom,
   replaceMediaPlaceholders,
   generateTTSForClassroom,
+  type MediaGenerated,
 } from '@/lib/server/classroom-media-generation';
 import { buildVideoManifestFromOutlines } from '@/lib/media/video-manifest';
 import type { UserRequirements } from '@/lib/types/generation';
@@ -178,6 +179,8 @@ export async function generateClassroom(
   options: {
     baseUrl: string;
     onProgress?: (progress: ClassroomGenerationProgress) => Promise<void> | void;
+    /** Called once per image/video actually produced, for usage metering. */
+    onMediaGenerated?: (generated: MediaGenerated) => void;
   },
 ): Promise<GenerateClassroomResult> {
   const { requirement, pdfContent } = input;
@@ -674,7 +677,12 @@ export async function generateClassroom(
     });
 
     try {
-      const mediaMap = await generateMediaForClassroom(outlines, stageId, options.baseUrl);
+      const mediaMap = await generateMediaForClassroom(
+        outlines,
+        stageId,
+        options.baseUrl,
+        options.onMediaGenerated,
+      );
       replaceMediaPlaceholders(scenes, mediaMap);
       log.info(`Media generation complete: ${Object.keys(mediaMap).length} files`);
     } catch (err) {

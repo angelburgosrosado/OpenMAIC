@@ -6,6 +6,11 @@ import { runClassroomGenerationJob } from '@/lib/server/classroom-job-runner';
 import { createClassroomGenerationJob } from '@/lib/server/classroom-job-store';
 import { buildRequestOrigin } from '@/lib/server/classroom-storage';
 import { createLogger } from '@/lib/logger';
+import {
+  remainingMediaAllowance,
+  reserveClassroomSlot,
+  resolveEntitlementKey,
+} from '@/lib/server/monetization/entitlements';
 
 const log = createLogger('GenerateClassroom API');
 
@@ -40,12 +45,32 @@ export async function POST(req: NextRequest) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Missing required field: requirement');
     }
 
+    const entitlement = await resolveEntitlementKey(req);
+    const slot = await reserveClassroomSlot(entitlement);
+    if (!slot.allowed) {
+      return apiError(
+        'RATE_LIMITED',
+        429,
+        `Daily classroom generation limit reached (${slot.limit}/day for your plan)`,
+      );
+    }
+
+    // Don't attempt media the account has no remaining monthly allowance for --
+    // better to silently skip than to generate it and fail to meter it.
+    const allowance = await remainingMediaAllowance(entitlement);
+    if (body.enableImageGeneration && allowance.images <= 0) {
+      body.enableImageGeneration = false;
+    }
+    if (body.enableVideoGeneration && allowance.videoSeconds <= 0) {
+      body.enableVideoGeneration = false;
+    }
+
     const baseUrl = buildRequestOrigin(req);
     const jobId = nanoid(10);
     const job = await createClassroomGenerationJob(jobId, body);
     const pollUrl = `${baseUrl}/api/generate-classroom/${jobId}`;
 
-    after(() => runClassroomGenerationJob(jobId, body, baseUrl));
+    after(() => runClassroomGenerationJob(jobId, body, baseUrl, entitlement));
 
     return apiSuccess(
       {
