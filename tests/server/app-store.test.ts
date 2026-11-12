@@ -9,6 +9,8 @@ import {
   __resetAppStoreForTests,
   __setAppStorePoolForTests,
   appendLog,
+  deleteDoc,
+  listDocKeys,
   readDoc,
   readLog,
   updateDoc,
@@ -99,6 +101,22 @@ describe('app store on PostgreSQL', () => {
 
   it('rejects unsafe keys', async () => {
     await expect(readDoc('../etc/passwd', null)).rejects.toThrow('Invalid store key');
+  });
+
+  it('deletes a document, and is a no-op when it does not exist', async () => {
+    await updateDoc('t/gone', { n: 0 }, () => ({ value: { n: 1 }, result: null }));
+    expect(await readDoc('t/gone', { n: 0 })).toEqual({ n: 1 });
+    await deleteDoc('t/gone');
+    expect(await readDoc('t/gone', { n: 0 })).toEqual({ n: 0 });
+    await expect(deleteDoc('t/gone')).resolves.toBeUndefined();
+  });
+
+  it('lists document keys under a prefix', async () => {
+    await updateDoc('t/list/a', null, () => ({ value: { n: 1 }, result: null }));
+    await updateDoc('t/list/b', null, () => ({ value: { n: 2 }, result: null }));
+    await updateDoc('t/other/c', null, () => ({ value: { n: 3 }, result: null }));
+    const keys = (await listDocKeys('t/list/')).sort();
+    expect(keys).toEqual(['t/list/a', 't/list/b']);
   });
 });
 

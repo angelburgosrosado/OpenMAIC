@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { __resetAppStoreForTests } from '@/lib/server/app-store/json-store';
+import { __resetAppStoreForTests, readDoc } from '@/lib/server/app-store/json-store';
 import {
   createRoom,
   hostAction,
@@ -17,6 +17,7 @@ import {
   publicState,
   QuizError,
   submitAnswer,
+  sweepExpiredRooms,
   type QuizQuestion,
 } from '@/lib/quiz/room';
 
@@ -160,6 +161,45 @@ describe('room lifecycle', () => {
     await expect(publicState(code, {}, t0 + 5 * 60 * 60 * 1000)).rejects.toMatchObject({
       status: 404,
     });
+  });
+
+  it('deletes an expired room from storage the next time anyone polls it', async () => {
+    const t0 = Date.now();
+    const { code } = await createRoom({
+      topic: { en: 'T', es: 'T' },
+      level: 'k2',
+      questions: [q(1)],
+    });
+    const key = `quiz/rooms/${code.toLowerCase()}`;
+    expect(await readDoc<unknown>(key, null)).not.toBeNull();
+
+    // Past expiry: publicState still 404s, but it also purges the stored
+    // nicknames/answers/scores — they can't just sit there past the
+    // "deleted within 4 hours" promise in the privacy policy.
+    await expect(publicState(code, {}, t0 + 5 * 60 * 60 * 1000)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(await readDoc<unknown>(key, null)).toBeNull();
+  });
+
+  it('sweeps expired rooms but leaves live ones alone', async () => {
+    const t0 = Date.now();
+    const { code: liveCode } = await createRoom({
+      topic: { en: 'Live', es: 'Vivo' },
+      level: 'k2',
+      questions: [q(1)],
+    });
+    const { code: deadCode } = await createRoom({
+      topic: { en: 'Dead', es: 'Muerto' },
+      level: 'k2',
+      questions: [q(1)],
+      now: t0 - 5 * 60 * 60 * 1000, // created 5h ago: already past its 4h TTL
+    });
+
+    const deleted = await sweepExpiredRooms(t0);
+    expect(deleted).toBe(1);
+    expect(await readDoc<unknown>(`quiz/rooms/${liveCode.toLowerCase()}`, null)).not.toBeNull();
+    expect(await readDoc<unknown>(`quiz/rooms/${deadCode.toLowerCase()}`, null)).toBeNull();
   });
 
   it('normalizes codes', () => {
