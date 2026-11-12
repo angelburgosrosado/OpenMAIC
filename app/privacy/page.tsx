@@ -93,7 +93,10 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We do not use advertising cookies, third-party analytics trackers, or cross-site tracking.
+          We use Vercel Web Analytics to see aggregate traffic trends, like how many people visit
+          each page. It doesn’t use cookies, doesn’t track you across other websites, and doesn’t
+          build a profile of you or your child. We do not use advertising cookies or cross-site
+          tracking.
         </p>
 
         <h2>4. How we use information</h2>
@@ -120,8 +123,8 @@ export default function PrivacyPage() {
             models by default.
           </li>
           <li>
-            <strong>Vercel</strong> (hosting) and <strong>Neon</strong> (database) — store and serve
-            the service.
+            <strong>Vercel</strong> (hosting, and privacy-friendly, cookieless website analytics) and{' '}
+            <strong>Neon</strong> (database) — store and serve the service.
           </li>
           <li>
             <strong>Stripe</strong> (payments) — processes payments and billing.
@@ -259,7 +262,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          No usamos cookies de publicidad, rastreadores analíticos de terceros ni rastreo entre
+          Usamos Vercel Web Analytics para ver tendencias generales de tráfico, como cuántas
+          personas visitan cada página. No usa cookies, no te rastrea en otros sitios web y no crea
+          un perfil de ti ni de tu hijo o hija. No usamos cookies de publicidad ni rastreo entre
           sitios.
         </p>
 
@@ -285,8 +290,8 @@ export default function PrivacyPage() {
             su API para entrenar sus modelos.
           </li>
           <li>
-            <strong>Vercel</strong> (alojamiento) y <strong>Neon</strong> (base de datos): guardan y
-            sirven el servicio.
+            <strong>Vercel</strong> (alojamiento, y analítica de sitio web sin cookies y respetuosa
+            de la privacidad) y <strong>Neon</strong> (base de datos): guardan y sirven el servicio.
           </li>
           <li>
             <strong>Stripe</strong> (pagos): procesa pagos y facturación.
