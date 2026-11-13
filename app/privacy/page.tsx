@@ -26,8 +26,7 @@ export default function PrivacyPage() {
         <h2>1. Who we are</h2>
         <p>
           QuéWhat (“QuéWhat”, “we”, “us”) operates quewhat.com and the QuéWhat apps for Android,
-          Android TV, Fire TV and Fire tablets. QuéWhat is built on the open-source OpenMAIC
-          project. Questions about this policy: {mail}.
+          Android TV, Fire TV and Fire tablets. Questions about this policy: {mail}.
         </p>
 
         <h2>2. Accounts are for adults</h2>
@@ -196,8 +195,7 @@ export default function PrivacyPage() {
         <h2>1. Quiénes somos</h2>
         <p>
           QuéWhat opera quewhat.com y las apps de QuéWhat para Android, Android TV, Fire TV y
-          tabletas Fire. QuéWhat está basado en el proyecto de código abierto OpenMAIC. Preguntas
-          sobre esta política: {mail}.
+          tabletas Fire. Preguntas sobre esta política: {mail}.
         </p>
 
         <h2>2. Las cuentas son para adultos</h2>
