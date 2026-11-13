@@ -1416,11 +1416,7 @@ function HomePage() {
 
       {/* Footer — flows with content, at the very end */}
       <div className="mt-auto pt-12 pb-4 text-center text-xs text-muted-foreground/40">
-        QuéWhat · Built on the open-source{' '}
-        <a href="https://github.com/THU-MAIC/OpenMAIC" className="underline" target="_blank" rel="noreferrer">
-          OpenMAIC
-        </a>{' '}
-        project ·{' '}
+        QuéWhat ·{' '}
         <Link href="/privacy" className="underline">
           Privacy
         </Link>{' '}

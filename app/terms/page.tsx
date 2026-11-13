@@ -88,9 +88,8 @@ export default function TermsPage() {
 
         <h2>6. Our service</h2>
         <p>
-          QuéWhat is built on open-source software (OpenMAIC). The QuéWhat name, logo and design are
-          ours. We may change, add or remove features, and we try to give notice of significant
-          changes.
+          The QuéWhat name, logo and design are ours. We may change, add or remove features, and we
+          try to give notice of significant changes.
         </p>
 
         <h2>7. Ending your account</h2>
@@ -194,9 +193,8 @@ export default function TermsPage() {
 
         <h2>6. Nuestro servicio</h2>
         <p>
-          QuéWhat está construido sobre software de código abierto (OpenMAIC). El nombre, el logo y
-          el diseño de QuéWhat son nuestros. Podemos cambiar, añadir o quitar funciones, e
-          intentamos avisar de los cambios importantes.
+          El nombre, el logo y el diseño de QuéWhat son nuestros. Podemos cambiar, añadir o quitar
+          funciones, e intentamos avisar de los cambios importantes.
         </p>
 
         <h2>7. Cerrar tu cuenta</h2>
